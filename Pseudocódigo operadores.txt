@@ -1,0 +1,41 @@
+def mutar (poblacion: [][], probabilidad: float, max_genes: int): -> None
+    for cromosoma in poblacion:
+        if randomFloat(0,1) <= probabilidad:
+            #Se va a producir mutacion
+            #Se elige la cantidad de genes a mutar
+            genes_a_mutar = randomInt(1, max_genes)
+            for x = 0 to x < genes_a_mutar:
+                #Se elige aleatoriamente un gen a mutar. Un gen puede mutar varias veces
+                indice_gen = randomInt(0, longitud(cromosoma) - 1)
+
+                if cromosoma[indice_gen] = 0:
+                    cromosoma[indice_gen] = 1
+                else:
+                    cromosoma[indice_gen] = 0
+            if verbose:
+                print("Mutado:", cromosoma)
+
+def aptitud (individuo: []): -> float
+    return sum(individuo)
+
+def crossover (progenitores: [], tipo: int = 1, num_progenitores_involucrados: int = 2, verbose: bool = False): -> []
+    match tipo:
+        case 1:
+            indices_corte = []
+            for i in range(num_progenitores_involucrados - 1)
+                indices_corte.append(randomInt(0, longitud(progenitores[0]) - 1))
+            #Obtenemos a los progenitores involucrados
+            progenitores_involucrados = randomSample(list(progenitores), num_progenitores_involucrados)
+            if verbose:
+                print("Progenitores involucrados:", progenitores_involucrados)
+            #Declaramos al sucesor
+            sucesor = []
+            progenitor_actual = 0
+            for i in range(longitud(progenitores[0])):
+                sucesor.append(progenitores_involucrados[progenitor_actual][i])
+                if i in indices_corte:
+                    progenitor_actual += 1
+            if verbose:
+                print("Sucesor:", sucesor)
+            return sucesor
+
