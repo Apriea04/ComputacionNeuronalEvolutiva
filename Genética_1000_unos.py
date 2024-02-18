@@ -59,8 +59,8 @@ def seleccionar_padres(poblacion: np.ndarray, n_padres: int) -> np.ndarray:
     poblacion = np.array(poblacion)
     padres = []
     for _ in range(n_padres):
-        # Seleccionamos dos individuos al azar
-        candidatos = random.sample(list(poblacion), 2)
+        # Seleccionamos tres individuos al azar
+        candidatos = random.sample(list(poblacion), 8)
         # Y nos quedamos con el que tenga mayor aptitud
         padres.append(max(candidatos, key=aptitud))
     return np.array(padres)
