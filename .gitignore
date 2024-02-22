@@ -2,3 +2,4 @@
 /__*
 /venv
 .gitignore
+*/__pycache__
