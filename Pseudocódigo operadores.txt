@@ -1,4 +1,4 @@
-def mutar (poblacion: [][], probabilidad: float, max_genes: int): -> None
+def mutar (poblacion: [][], probabilidad: float, max_genes: int, verbose: bool = False): -> None
     for cromosoma in poblacion:
         if randomFloat(0,1) <= probabilidad:
             #Se va a producir mutacion

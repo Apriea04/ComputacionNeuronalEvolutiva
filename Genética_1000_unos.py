@@ -8,10 +8,12 @@ def mutar(
     max_genes: int = 1,
     verbose: bool = False,
 ) -> None:
-    """Puede generar mutaciones en individuos de la población:
-    :param poblacion: matriz de individuos, siendo un indiviudo una matriz de genes
-    :param probabilidad: probabilidad de mutación entre 0 y 1
-    :param max_genes: cantidad máxima de genes a mutar"""
+    """Puede generar mutaciones en individuos de la población.
+    :param poblacion: matriz de individuos
+    :param probabilidad: probabilidad de mutación
+    :param max_genes: número máximo de genes a mutar
+    :param verbose: si se desea imprimir información sobre la mutación
+    :return: None"""
 
     # Recorremos la población
     for cromosoma in poblacion:
@@ -31,7 +33,8 @@ def mutar(
 
 def aptitud(individuo: np.ndarray) -> float:
     """Calcula la aptitud de un individuo. En nuestro caso será la suma de sus genes.
-    :param individuo: matriz de genes"""
+    :param individuo: matriz de genes
+    :return: aptitud del individuo"""
     individuo = np.array(individuo)
     return np.sum(individuo)
 
@@ -39,7 +42,8 @@ def aptitud(individuo: np.ndarray) -> float:
 def crear_poblacion(n_individuos: int, n_genes: int) -> np.ndarray:
     """Crea una población de individuos con n_genes.
     :param n_individuos: número de individuos
-    :param n_genes: número de genes"""
+    :param n_genes: número de genes
+    :return: matriz de individuos"""
     poblacion = []
     for _ in range(n_individuos):
         cromosoma = []
@@ -55,7 +59,8 @@ def seleccionar_padres(poblacion: np.ndarray, n_padres: int) -> np.ndarray:
     """Selecciona n_padres de la población, siendo más probable que los individuos con
     mayor aptitud sean seleccionados.
     :param poblacion: matriz de individuos
-    :param n_padres: número de padres a seleccionar"""
+    :param n_padres: número de padres a seleccionar
+    :return: matriz de padres seleccionados"""
     poblacion = np.array(poblacion)
     padres = []
     for _ in range(n_padres):
