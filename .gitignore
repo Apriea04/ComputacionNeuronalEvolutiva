@@ -1,2 +1,4 @@
 /.venv
 /__*
+/venv
+.gitignore

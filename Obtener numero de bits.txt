@@ -1,0 +1,9 @@
+Bits en función de precision y amplitud de un intervalo:
+
+3x10^^6 = 2^^n
+
+log10(Ix10^^p) = log10(2^^n)
+
+p log10(I) = n log10(2)
+
+n = (p+log10(I))/log10(2)

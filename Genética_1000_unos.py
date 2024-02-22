@@ -31,6 +31,7 @@ def mutar(
             if verbose:
                 print("Mutado:", cromosoma)
 
+
 def aptitud(individuo: np.ndarray) -> float:
     """Calcula la aptitud de un individuo. En nuestro caso será la suma de sus genes.
     :param individuo: matriz de genes
@@ -69,6 +70,29 @@ def seleccionar_padres(poblacion: np.ndarray, n_padres: int) -> np.ndarray:
         # Y nos quedamos con el que tenga mayor aptitud
         padres.append(max(candidatos, key=aptitud))
     return np.array(padres)
+
+
+def seleccionar_ruleta(poblacion: np.ndarray, n: int) -> np.ndarray:
+    """Selecciona n individuos de la población usando el método de la ruleta.
+    :param poblacion: matriz de individuos
+    :param n: número de individuos a seleccionar
+    :return: matriz de individuos seleccionados"""
+
+    aptitudes = [aptitud(individuo) for individuo in poblacion]
+    poblacion_seleccionada = []
+    aptitudes_acumuladas = [sum(aptitudes[: i + 1]) for i in range(len(aptitudes))]
+    aptitud_total = aptitudes_acumuladas[-1]
+
+    # Para cada progenitor a seleccionar
+    for _ in range(n):
+        valor = random.randint(0, aptitud_total)
+
+        seleccionado = 0
+
+        while not aptitudes_acumuladas[seleccionado] >= valor:
+            seleccionado += 1
+        poblacion_seleccionada.append(poblacion[seleccionado])
+    return np.array(poblacion_seleccionada)
 
 
 def crossover(
@@ -110,7 +134,7 @@ def crossover(
                     progenitor_actual += 1
             if verbose:
                 print("Sucesor:", sucesor)
-            
+
             return np.array(sucesor)
 
 
