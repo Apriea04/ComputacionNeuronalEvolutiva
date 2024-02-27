@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from typing import Callable
 
 
 def mutar(
@@ -72,13 +73,14 @@ def seleccionar_padres(poblacion: np.ndarray, n_padres: int) -> np.ndarray:
     return np.array(padres)
 
 
-def seleccionar_ruleta(poblacion: np.ndarray, n: int) -> np.ndarray:
+def seleccionar_ruleta(poblacion: np.ndarray, n: int, fun_aptitud: Callable = aptitud) -> np.ndarray:
     """Selecciona n individuos de la población usando el método de la ruleta.
     :param poblacion: matriz de individuos
     :param n: número de individuos a seleccionar
+    :param fun_aptitud: función para calcular la aptitud de un individuo
     :return: matriz de individuos seleccionados"""
 
-    aptitudes = [aptitud(individuo) for individuo in poblacion]
+    aptitudes = [fun_aptitud(individuo) for individuo in poblacion]
     poblacion_seleccionada = []
     aptitudes_acumuladas = [sum(aptitudes[: i + 1]) for i in range(len(aptitudes))]
     aptitud_total = aptitudes_acumuladas[-1]
@@ -106,7 +108,9 @@ def crossover(
     num_progenitores_involucrados de entre *progenitores.
     :param poblacion: matriz de individuos
     :param progenitores: matriz de progenitores
-    :param tipo: tipo de crossover a realizar
+    :param tipo: tipo de crossover a realizar.
+        Tipo 1: Hijo único "biológico natural".
+        Tipo 2: Corte sencillo: dos padres, dos hijos.
     :param num_progenitores_involucrados: número de progenitores a involucrar
     :param verbose: si se desea imprimir información sobre el crossover
     :return: matriz de individuos con el nuevo individuo agregado"""
@@ -137,7 +141,7 @@ def crossover(
                 if verbose:
                     print("Sucesor:", sucesor)
 
-                return np.array(sucesor)
+                return np.array([sucesor])
             else:
                 # Si no se realiza el crossover, devuelvo un único progenitor aleatoio
                 return np.array(random.choice(list(progenitores)))
@@ -157,12 +161,13 @@ def crossover(
                 return np.array(progenitores)
 
 
-def seleccion_elitista(poblacion: np.ndarray, n: int) -> np.ndarray:
+def seleccion_elitista(poblacion: np.ndarray, n: int, fun_aptitud: Callable = aptitud) -> np.ndarray:
     """Selecciona a los n individuos más aptos de la población.
     :param poblacion: individuos de entre los que seleccionar
     :param n: número de individuos a seleccionar
+    :param fun_aptitud: función para calcular la aptitud de un individuo
     :return: individuos seleccionados"""
 
-    aptitudes = [aptitud(individuo) for individuo in poblacion]
+    aptitudes = [fun_aptitud(individuo) for individuo in poblacion]
     indices = np.argsort(aptitudes)
     return poblacion[indices[-n:]]
