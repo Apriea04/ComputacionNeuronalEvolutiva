@@ -2,7 +2,7 @@ from math import sin, pi
 from typing import Callable
 import random
 
-INDIVIDUOS = 5
+INDIVIDUOS = 50
 
 
 def f(x: int) -> float:
@@ -17,6 +17,7 @@ def decimal_de(cadena: list) -> float:
         num += cadena[len(cadena) - 1 - i] * 2**i
     num = -1 + (3 / (2**22 - 1)) * num
     return num
+
 
 def crear_poblacion(tamano: int) -> list:
     """Crea una población de tamaño individuos para el problema de la maximización de la función aptitud."""
@@ -109,14 +110,15 @@ def seleccion_elitista(
     :param n: número de individuos a seleccionar
     :param fun_aptitud: función para calcular la aptitud de un individuo
     :return: individuos seleccionados"""
-    patata = sorted(poblacion, key=fun_aptitud, reverse=True)[: n]
+    patata = sorted(poblacion, key=fun_aptitud, reverse=True)[:n]
     return patata
+
 
 # TODO: Implementar el algoritmo genético completo
 INDIVIDUOS = 50
 PROB_CROSSOVER = 0.25
 PROB_MUTACION = 0.01
-GENERACIONES = 1000
+GENERACIONES = 500
 
 mejores_aptitudes = []
 aptitudes_medias = []
@@ -127,7 +129,6 @@ aptitudes_medias.append(
 mejores_aptitudes.append(max([aptitud_maximizar(individuo) for individuo in poblacion]))
 
 for _ in range(GENERACIONES):
-    print(_)
     aptitudes_medias.append(
         sum([aptitud_maximizar(individuo) for individuo in poblacion]) / INDIVIDUOS
     )
@@ -144,6 +145,15 @@ for _ in range(GENERACIONES):
         for item in nueva_poblacion:
             poblacion.append(item)
     poblacion = seleccion_elitista(poblacion, INDIVIDUOS)
+    if _ % 100 == 0:
+        print(f"Generación: {_}")
+        print(f"Mejor aptitud: {mejores_aptitudes[-1]}")
+print("####################")
+print(f"Generación: {GENERACIONES}")
+print(f"Mejor aptitud: {mejores_aptitudes[-1]}")
+print(f"Individuo: {decimal_de(sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])}")
+print("Binario: ", sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])
+print("####################")
 
 # Grafico con los resultados
 import matplotlib.pyplot as plt
