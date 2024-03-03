@@ -2,7 +2,7 @@ from math import sin, pi
 from typing import Callable
 import random
 
-INDIVIDUOS = 50
+INDIVIDUOS = 5
 
 
 def f(x: int) -> float:
@@ -81,11 +81,9 @@ def crossover(
         punto_corte = random.randint(1, len(progenitores[0]) - 1)
         # Creo a los hijos
         hijo1 = []
-        hijo1.append(progenitores[0][:punto_corte])
-        hijo1.append(progenitores[1][punto_corte:])
         hijo2 = []
-        hijo2.append(progenitores[1][:punto_corte])
-        hijo2.append(progenitores[0][punto_corte:])
+        hijo1 = progenitores[0][:punto_corte] + progenitores[1][punto_corte:]
+        hijo2 = progenitores[1][:punto_corte] + progenitores[0][punto_corte:]
         # Los devuelvo como ndarray
         return [hijo1, hijo2]
     else:
@@ -111,14 +109,14 @@ def seleccion_elitista(
     :param n: número de individuos a seleccionar
     :param fun_aptitud: función para calcular la aptitud de un individuo
     :return: individuos seleccionados"""
-    return sorted(poblacion, key=fun_aptitud, reverse=True)[: n]
-
+    patata = sorted(poblacion, key=fun_aptitud, reverse=True)[: n]
+    return patata
 
 # TODO: Implementar el algoritmo genético completo
 INDIVIDUOS = 50
 PROB_CROSSOVER = 0.25
 PROB_MUTACION = 0.01
-GENERACIONES = 100
+GENERACIONES = 1000
 
 mejores_aptitudes = []
 aptitudes_medias = []
@@ -138,7 +136,7 @@ for _ in range(GENERACIONES):
     )
     nueva_poblacion = []
     while len(nueva_poblacion) < INDIVIDUOS:
-        seleccionados = seleccionar_ruleta(poblacion, INDIVIDUOS)
+        seleccionados = seleccionar_ruleta(poblacion, 2)
         hijos = crossover(seleccionados, PROB_CROSSOVER)
         for hijo in hijos:
             mutacion(hijo, PROB_MUTACION)
