@@ -115,10 +115,10 @@ def seleccion_elitista(
 
 
 # TODO: Implementar el algoritmo genético completo
-INDIVIDUOS = 50
+INDIVIDUOS = 80
 PROB_CROSSOVER = 0.25
-PROB_MUTACION = 0.01
-GENERACIONES = 500
+PROB_MUTACION = 0.1
+GENERACIONES = 900
 
 mejores_aptitudes = []
 aptitudes_medias = []
