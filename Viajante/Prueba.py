@@ -1,13 +1,14 @@
 import random
 from typing import Callable
+import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
 NUM_ITERACIONES = 100
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
-NUM_ELITISMO = 2
 PARTICIPANTES_TORNEO = 3
+
 
 def leer_distancias(path: str) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
@@ -56,11 +57,11 @@ def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
     for ciudad in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
         distancia = matriz_adyacencia[individuo[ciudad]][individuo[ciudad + 1]]
-        
+
         # Si la distancia es 0, es que no hay conexión entre las poblaciones. Luego el individuo no es válido
         if distancia == 0:
             return float("inf")
-        
+
         aptitud += distancia
 
         # Sumamos el coste de estar en la población actual
@@ -103,7 +104,9 @@ def mutar(individuo: list) -> list:
 # https://www.hindawi.com/journals/cin/2017/7430125/
 
 
-def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
+def crossover_partially_mapped(
+    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+) -> list:
     """Realiza el crossover partially mapped según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
     Cada 2 padres producen 2 hijos.
@@ -116,6 +119,11 @@ def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
 
     # Iteramos sobre los padres de 2 en 2
     for i in range(0, len(lista_padres), 2):
+        if random.random() > probabilidad:
+            lista_hijos.append(lista_padres[i])
+            lista_hijos.append(lista_padres[i + 1])
+            continue
+
         # Nombramos los padres para facilidad de uso
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
@@ -156,14 +164,24 @@ def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
             if hijo_2[j] == -1:
                 hijo_2[j] = ya_en_hijo_2.pop(0)
 
-        # Añadimos los hijos a la lista de hijos
-        lista_hijos.append(hijo_1)
-        lista_hijos.append(hijo_2)
+        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
+        # Si no son válidos, añadimos los padres a la lista de hijos
+        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_1)
+        else:
+            lista_hijos.append(hijo_1)
+
+        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_2)
+        else:
+            lista_hijos.append(hijo_2)
 
     return lista_hijos
 
 
-def crossover_order(lista_padres: list, aptitud: Callable) -> list:
+def crossover_order(
+    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+) -> list:
     """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
     Cada 2 padres producen 2 hijos.
@@ -176,6 +194,11 @@ def crossover_order(lista_padres: list, aptitud: Callable) -> list:
 
     # Iteramos sobre los padres de 2 en 2
     for i in range(0, len(lista_padres), 2):
+        if random.random() > probabilidad:
+            lista_hijos.append(lista_padres[i])
+            lista_hijos.append(lista_padres[i + 1])
+            continue
+
         # Nombramos los padres para facilidad de uso
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
@@ -215,14 +238,23 @@ def crossover_order(lista_padres: list, aptitud: Callable) -> list:
             if hijo_2[j] == -1:
                 hijo_2[j] = lista_padre_1.pop(0)
 
-        # Añadimos los hijos a la lista de hijos
-        lista_hijos.append(hijo_1)
-        lista_hijos.append(hijo_2)
+                # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
+        # Si no son válidos, añadimos los padres a la lista de hijos
+        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_1)
+        else:
+            lista_hijos.append(hijo_1)
 
+        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_2)
+        else:
+            lista_hijos.append(hijo_2)
     return lista_hijos
 
 
-def crossover_cycle(lista_padres: list, aptitud: Callable) -> list:
+def crossover_cycle(
+    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+) -> list:
     """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
     Cada 2 padres producen 2 hijos.
@@ -235,6 +267,11 @@ def crossover_cycle(lista_padres: list, aptitud: Callable) -> list:
 
     # Iteramos sobre los padres de 2 en 2
     for i in range(0, len(lista_padres), 2):
+        if random.random() > probabilidad:
+            lista_hijos.append(lista_padres[i])
+            lista_hijos.append(lista_padres[i + 1])
+            continue
+
         # Nombramos los padres para facilidad de uso
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
@@ -262,13 +299,22 @@ def crossover_cycle(lista_padres: list, aptitud: Callable) -> list:
             if hijo_2[j] == -1:
                 hijo_2[j] = padre_1[j]
 
-        # Añadimos los hijos a la lista de hijos
-        lista_hijos.append(hijo_1)
-        lista_hijos.append(hijo_2)
+        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
+        # Si no son válidos, añadimos los padres a la lista de hijos
+        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_1)
+        else:
+            lista_hijos.append(hijo_1)
+
+        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
+            lista_hijos.append(padre_2)
+        else:
+            lista_hijos.append(hijo_2)
 
     return lista_hijos
 
-def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable) -> list:
+
+def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable, matriz_adyacencia: list) -> list:
     """Selecciona los mejores individuos de la población.
     :param poblacion: Lista de individuos.
     :param num_elitismo: Número de individuos a seleccionar.
@@ -276,11 +322,14 @@ def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable) -> list:
     :return: Lista de individuos seleccionados.
     """
     # Ordenamos la población por aptitud
-    poblacion.sort(key=lambda x: aptitud(x))
+    poblacion.sort(key=lambda x: aptitud(x, matriz_adyacencia))
     # Devolvemos los num_elitismo primeros individuos
     return poblacion[:num_elitismo]
 
-def seleccionar_torneo(poblacion: list, participantes: int, aptitud: Callable, cantidad: int = None) -> list:
+
+def seleccionar_torneo(
+    poblacion: list, participantes: int, aptitud: Callable, matriz_adyacencia: list, cantidad: int = None
+) -> list:
     """Selecciona los mejores individuos de la población.
     :param poblacion: Lista de individuos.
     :param participantes: Número de participantes en cada torneo.
@@ -288,7 +337,7 @@ def seleccionar_torneo(poblacion: list, participantes: int, aptitud: Callable, c
     :return: Lista de individuos seleccionados.
     """
     # Por defecto seleccionamos la misma cantidad de individuos que hay en la población
-    if cantidad == None:
+    if cantidad is None:
         cantidad = len(poblacion)
     # Inicializamos la lista de seleccionados
     seleccionados = []
@@ -297,10 +346,11 @@ def seleccionar_torneo(poblacion: list, participantes: int, aptitud: Callable, c
         # Elegimos participantes al azar
         participantes_elegidos = random.sample(poblacion, participantes)
         # Elegimos el mejor de los participantes
-        seleccionado = min(participantes_elegidos, key=lambda x: aptitud(x))
+        seleccionado = min(participantes_elegidos, key=lambda x: aptitud(x, matriz_adyacencia))
         # Añadimos el seleccionado a la lista de seleccionados
         seleccionados.append(seleccionado)
     return seleccionados
+
 
 # Ejecución de ejemplo
 
@@ -311,12 +361,12 @@ distancias_iteraciones = []
 
 for i in range(NUM_ITERACIONES):
     # Seleccionamos los individuos por torneo
-    seleccionados = seleccionar_torneo(poblacion, PARTICIPANTES_TORNEO, aptitud_viajante)
-    
-    # TODO: comprobar de aquí para abajo
+    seleccionados = seleccionar_torneo(
+        poblacion, PARTICIPANTES_TORNEO, aptitud_viajante, distancias
+    )
 
     # Cruzamos los seleccionados
-    hijos = crossover_cycle(seleccionados, lambda x: aptitud_viajante(x, distancias))
+    hijos = crossover_cycle(seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO)
 
     # Mutamos los hijos
     for hijo in hijos:
@@ -324,7 +374,12 @@ for i in range(NUM_ITERACIONES):
             hijo = mutar(hijo)
 
     # Elitismo
-    poblacion = elitismo(poblacion + hijos, NUM_ELITISMO, lambda x: aptitud_viajante(x, distancias))
+    poblacion = elitismo(poblacion + hijos, len(municipios), aptitud_viajante, distancias)
 
     # Guardamos la distancia del mejor individuo
     distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
+
+# Mostramos la evolución de la distancia con matplotlib
+plt.plot(distancias_iteraciones)
+plt.show()
+print(poblacion[0])
