@@ -1,6 +1,7 @@
 import random
 from typing import Callable
 
+# Todo este código está pensado desde el principio para minimizar la función de aptitud
 
 def leer_distancias(path: str) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
@@ -267,3 +268,26 @@ def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable) -> list:
     poblacion.sort(key=lambda x: aptitud(x))
     # Devolvemos los num_elitismo primeros individuos
     return poblacion[:num_elitismo]
+
+def seleccionar_torneo(poblacion: list, participantes: int, aptitud: Callable, cantidad: int = None) -> list:
+    """Selecciona los mejores individuos de la población.
+    :param poblacion: Lista de individuos.
+    :param participantes: Número de participantes en cada torneo.
+    :param aptitud: Función de aptitud.
+    :return: Lista de individuos seleccionados.
+    """
+    # Por defecto seleccionamos la misma cantidad de individuos que hay en la población
+    if cantidad == None:
+        cantidad = len(poblacion)
+    # Inicializamos la lista de seleccionados
+    seleccionados = []
+    # Iteramos hasta que tengamos la cantidad de seleccionados que queremos
+    while len(seleccionados) < cantidad:
+        # Elegimos participantes al azar
+        participantes_elegidos = random.sample(poblacion, participantes)
+        # Elegimos el mejor de los participantes
+        seleccionado = min(participantes_elegidos, key=lambda x: aptitud(x))
+        # Añadimos el seleccionado a la lista de seleccionados
+        seleccionados.append(seleccionado)
+    return seleccionados
+
