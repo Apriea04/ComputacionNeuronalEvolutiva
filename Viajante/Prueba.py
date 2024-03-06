@@ -208,3 +208,50 @@ def crossover_order(lista_padres: list, aptitud: Callable) -> list:
         lista_hijos.append(hijo_2)
 
     return lista_hijos
+
+
+def crossover_cycle(lista_padres: list, aptitud: Callable) -> list:
+    """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
+    Resumidamente, se van eligiendo padres en orden y de 2 en 2.
+    Cada 2 padres producen 2 hijos.
+    :param lista_padres: Lista de todos los padres a cruzar.
+    :param aptitud: Función de aptitud.
+    :return: Lista de hijos.
+    """
+    # Incializamos la lista de hijos
+    lista_hijos = []
+
+    # Iteramos sobre los padres de 2 en 2
+    for i in range(0, len(lista_padres), 2):
+        # Nombramos los padres para facilidad de uso
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
+        # Inicializamos los hijos
+        hijo_1 = [-1 for _ in range(len(padre_1))]
+        hijo_2 = [-1 for _ in range(len(padre_1))]
+
+        # Cada hijo tendrá como base el padre con mismo numero
+        # Hacemos el primer ciclo de cada hijo
+        j = 0
+        while hijo_1[j] == -1:
+            hijo_1[j] = padre_1[j]
+            j = padre_2.index(padre_1[j])
+
+        j = 0
+        while hijo_2[j] == -1:
+            hijo_2[j] = padre_2[j]
+            j = padre_1.index(padre_2[j])
+
+        # Completamos los hijos con los números que faltan. Serán del padre contrario
+        for j in range(len(hijo_1)):
+            if hijo_1[j] == -1:
+                hijo_1[j] = padre_2[j]
+            if hijo_2[j] == -1:
+                hijo_2[j] = padre_1[j]
+
+        # Añadimos los hijos a la lista de hijos
+        lista_hijos.append(hijo_1)
+        lista_hijos.append(hijo_2)
+
+    return lista_hijos
