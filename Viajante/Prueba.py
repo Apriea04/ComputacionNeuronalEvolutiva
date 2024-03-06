@@ -1,3 +1,5 @@
+import random
+
 def leer_distancias(path: str) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
     :param path: Ruta del fichero.
@@ -51,3 +53,18 @@ def aptitud(individuo: list, matriz_adyacencia) -> float:
     
     return aptitud
 
+def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
+    """Crea una población de individuos.
+    :param num_poblaciones: Número de poblaciones.
+    :param tam_poblacion: Tamaño de la población.
+    :return: Lista de listas que representan individuos.
+    """
+    # Creamos una lista de listas con el tamaño de la población
+    poblacion = []
+    for i in range(tam_poblacion):
+        # Creamos un individuo aleatorio
+        individuo = list(range(num_poblaciones))
+        random.shuffle(individuo)
+        print(individuo)
+        poblacion.append(individuo)
+    return poblacion
