@@ -1,4 +1,6 @@
 import random
+from typing import Callable
+
 
 def leer_distancias(path: str) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
@@ -29,7 +31,7 @@ def leer_distancias(path: str) -> tuple:
     return nombres_municipios, matriz_numeros
 
 
-def aptitud(individuo: list, matriz_adyacencia) -> float:
+def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
     Elementos a tener en cuenta para el cálculo de la aptitud:
     - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
@@ -37,10 +39,10 @@ def aptitud(individuo: list, matriz_adyacencia) -> float:
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
     :return: Valor de aptitud del individuo.
     """
-    #Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
+    # Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
     if individuo[0] != 0:
-        return float('inf')
-    
+        return float("inf")
+
     # Aptitud comienza como el tiempo en almacén
     aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
 
@@ -50,8 +52,9 @@ def aptitud(individuo: list, matriz_adyacencia) -> float:
 
         # Sumamos el coste de estar en la población actual
         aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
-    
+
     return aptitud
+
 
 def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
     """Crea una población de individuos.
@@ -69,6 +72,7 @@ def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
         poblacion.append(individuo)
     return poblacion
 
+
 def mutar(individuo: list) -> list:
     """Muta un individuo.
     :param individuo: Lista de enteros que representa el camino.
@@ -82,3 +86,66 @@ def mutar(individuo: list) -> list:
     # Intercambiamos los valores de las posiciones
     mutado[pos1], mutado[pos2] = mutado[pos2], mutado[pos1]
     return mutado
+
+
+# https://www.hindawi.com/journals/cin/2017/7430125/
+
+
+def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
+    """Realiza el crossover partially mapped según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
+    Resumidamente, se van eligiendo padres en orden y de 2 en 2.
+    Cada 2 padres producen 2 hijos.
+    :param lista_padres: Lista de todos los padres a cruzar.
+    :param aptitud: Función de aptitud.
+    :return: Lista de hijos.
+    """
+    # Incializamos la lista de hijos
+    lista_hijos = []
+
+    # Iteramos sobre los padres de 2 en 2
+    for i in range(0, len(lista_padres), 2):
+        # Nombramos los padres para facilidad de uso
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
+        # Elegimos dos puntos de corte aleatorios
+        punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
+
+        # Inicializamos los hijos
+        hijo_1 = [-1 for _ in range(len(padre_1))]
+        hijo_2 = [-1 for _ in range(len(padre_1))]
+
+        # El intervalo entre los puntos de corte es intercambiado e insertado en la misma posición en los hijos
+        hijo_2[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
+        hijo_1[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
+
+        # Pasamos los número originales de los padres a los hijos siempre y cuando no estén ya presentes en ellos:
+        # Aprovechamos a crear una lista para los números que ya están en los hijos
+        ya_en_hijo_1 = []
+        ya_en_hijo_2 = []
+        
+        for j in range(len(padre_1)):
+            # Vamos recorriendo los padres por fuera de la zona traspuesta
+            # TODO: este if primero probablemente no sea necesario, ya que la comprobación es redundante
+            if j < punto_corte_1 or j >= punto_corte_2:
+                if padre_2[j] not in hijo_2:
+                    hijo_2[j] = padre_2[j]
+                else:
+                    ya_en_hijo_2.append(padre_2[j])
+                if padre_1[j] not in hijo_1:
+                    hijo_1[j] = padre_1[j]
+                else:
+                    ya_en_hijo_1.append(padre_1[j])
+        
+        # Completamos los hijos con los números que faltan EN ORDEN
+        for j in range(len(hijo_1)):
+            if hijo_1[j] == -1:
+                hijo_1[j] = ya_en_hijo_1.pop(0)
+            if hijo_2[j] == -1:
+                hijo_2[j] = ya_en_hijo_2.pop(0)
+    
+        # Añadimos los hijos a la lista de hijos
+        lista_hijos.append(hijo_1)
+        lista_hijos.append(hijo_2)
+    
+    return lista_hijos
