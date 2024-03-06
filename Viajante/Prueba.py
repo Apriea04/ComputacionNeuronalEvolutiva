@@ -255,3 +255,15 @@ def crossover_cycle(lista_padres: list, aptitud: Callable) -> list:
         lista_hijos.append(hijo_2)
 
     return lista_hijos
+
+def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable) -> list:
+    """Selecciona los mejores individuos de la población.
+    :param poblacion: Lista de individuos.
+    :param num_elitismo: Número de individuos a seleccionar.
+    :param aptitud: Función de aptitud.
+    :return: Lista de individuos seleccionados.
+    """
+    # Ordenamos la población por aptitud
+    poblacion.sort(key=lambda x: aptitud(x))
+    # Devolvemos los num_elitismo primeros individuos
+    return poblacion[:num_elitismo]
