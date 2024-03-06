@@ -8,7 +8,7 @@ def leer_distancias(path: str) -> tuple:
     matriz_numeros = []
 
     # Abrimos el archivo para lectura
-    with open(path, 'r', encoding='utf-8') as archivo:
+    with open(path, "r", encoding="utf-8") as archivo:
         # Iteramos sobre cada línea del archivo
         for linea in archivo:
             # Dividimos la línea en dos partes: el nombre del municipio y los números
@@ -19,7 +19,7 @@ def leer_distancias(path: str) -> tuple:
 
             # Añadimos el nombre del municipio a la lista de nombres
             nombres_municipios.append(nombre_municipio)
-            
+
             # Convertimos los números a enteros y los añadimos a la matriz
             matriz_numeros.append([int(numero) for numero in numeros])
 
@@ -27,7 +27,27 @@ def leer_distancias(path: str) -> tuple:
     return nombres_municipios, matriz_numeros
 
 
-#Probamos la funcion anterior
-nombres, matriz = leer_distancias('Viajante/Distancias_ejemplo.txt')
-print(nombres)
-print(matriz)
+def aptitud(individuo: list, matriz_adyacencia) -> float:
+    """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
+    Elementos a tener en cuenta para el cálculo de la aptitud:
+    - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
+    :param individuo: Lista de enteros que representa el camino.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
+    :return: Valor de aptitud del individuo.
+    """
+    #Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
+    if individuo[0] != 0:
+        return float('inf')
+    
+    # Aptitud comienza como el tiempo en almacén
+    aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
+
+    for ciudad in range(1, len(individuo)):
+        # Sumamos el coste de para llegar a la población actual desde la anterior
+        aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad + 1]]
+
+        # Sumamos el coste de estar en la población actual
+        aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
+    
+    return aptitud
+
