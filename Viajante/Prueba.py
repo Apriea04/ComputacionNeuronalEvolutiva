@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
-NUM_ITERACIONES = 1000
-PROB_MUTACION = 0.1
+NUM_ITERACIONES = 5000
+PROB_MUTACION = 1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
+NUM_INDIVIDUOS = 100
 
 
 def leer_distancias(path: str) -> tuple:
@@ -375,42 +376,74 @@ def seleccionar_torneo(
     return seleccionados
 
 
-# Ejecución de ejemplo
+def ejecutar_ejemplo_viajante(dibujar: bool = False, verbose: bool = True):
+    # Ejecución de ejemplo
 
-municipios, distancias = leer_distancias("Viajante/Distancias_ejemplo.txt")
-poblacion = crear_poblacion(len(municipios), 10, aptitud_viajante, distancias)
+    municipios, distancias = leer_distancias("Viajante/Ejemplo_Dijkstra.txt")
+    poblacion = crear_poblacion(len(municipios), NUM_INDIVIDUOS, aptitud_viajante, distancias)
 
-distancias_iteraciones = []
+    distancias_iteraciones = []
+    distancias_medias = []
 
-for i in range(NUM_ITERACIONES):
-    # Seleccionamos los individuos por torneo
-    seleccionados = seleccionar_torneo(
-        poblacion, PARTICIPANTES_TORNEO, aptitud_viajante, distancias
-    )
+    for i in range(NUM_ITERACIONES):
+        # Seleccionamos los individuos por torneo
+        seleccionados = seleccionar_torneo(
+            poblacion, PARTICIPANTES_TORNEO, aptitud_viajante, distancias
+        )
 
-    # Cruzamos los seleccionados
-    hijos = crossover_cycle(
-        seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
-    )
+        # Cruzamos los seleccionados
+        hijos = crossover_partially_mapped(
+            seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
+        )
 
-    # Mutamos los hijos
-    for hijo in hijos:
-        if random.random() < PROB_MUTACION:
-            hijo = mutar(hijo)
+        # Mutamos los hijos
+        for hijo in hijos:
+            if random.random() < PROB_MUTACION:
+                hijo = mutar(hijo)
 
-    # Elitismo
-    poblacion = elitismo(
-        poblacion + hijos, len(municipios), aptitud_viajante, distancias
-    )
+        # Elitismo
+        poblacion = elitismo(
+            poblacion + hijos, len(municipios), aptitud_viajante, distancias
+        )
 
-    # Guardamos la distancia del mejor individuo
-    distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
+        # Guardamos la distancia del mejor individuo
+        distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
+        
+        # Guardamos la distancia media de la población
+        distancias_medias.append(sum(aptitud_viajante(individuo, distancias) for individuo in poblacion) / len(poblacion))
 
-# Mostramos la evolución de la distancia con matplotlib
-plt.plot(distancias_iteraciones)
-plt.show()
-print(poblacion[0])
+    if dibujar:
+        # Mostramos la evolución de la distancia con matplotlib
+        plt.plot(distancias_iteraciones, label="Distancia mejor individuo")
+        plt.plot(distancias_medias, label="Distancia media")
+        plt.legend()
+        plt.show()
+        print(poblacion[0])
+        print(distancias_iteraciones[-1])
 
-# Imprimimos el recorrido con los nombres de los municipios
-for i in poblacion[0]:
-    print(municipios[i])
+    if verbose:
+        # Imprimimos el recorrido con los nombres de los municipios
+        for i in poblacion[0]:
+            print(municipios[i])
+
+    return distancias_iteraciones, distancias_medias
+
+
+if __name__ == "__main__":
+    mejores_aptitudes = []
+    distancias_medias = []
+
+    for i in range(1):
+        apt, med = ejecutar_ejemplo_viajante(True)
+        mejores_aptitudes.append(apt)
+        distancias_medias.append(med)
+
+    if False:    
+        # Mostramos la evolución de la distancia con matplotlib
+        plt.plot([sum(x) / len(x) for x in zip(*mejores_aptitudes)])
+        plt.show()
+        plt.plot([sum(x) / len(x) for x in zip(*distancias_medias)])
+        plt.show()
+        print([sum(x) / len(x) for x in zip(*mejores_aptitudes)][-1])
+    
+# TODO: probar este crossover: https://www.youtube.com/watch?v=aFlUr05koro
