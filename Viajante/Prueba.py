@@ -68,3 +68,17 @@ def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
         print(individuo)
         poblacion.append(individuo)
     return poblacion
+
+def mutar(individuo: list) -> list:
+    """Muta un individuo.
+    :param individuo: Lista de enteros que representa el camino.
+    :return: Lista de enteros que representa el camino mutado.
+    """
+    # Copiamos el individuo
+    mutado = individuo[:]
+    # Elegimos dos posiciones aleatorias
+    pos1 = random.randint(0, len(mutado) - 1)
+    pos2 = random.randint(0, len(mutado) - 1)
+    # Intercambiamos los valores de las posiciones
+    mutado[pos1], mutado[pos2] = mutado[pos2], mutado[pos1]
+    return mutado
