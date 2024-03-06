@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
-NUM_ITERACIONES = 100
+NUM_ITERACIONES = 1000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
@@ -56,7 +56,7 @@ def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
 
     for ciudad in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
-        distancia = matriz_adyacencia[individuo[ciudad]][individuo[ciudad + 1]]
+        distancia = matriz_adyacencia[individuo[ciudad - 1]][individuo[ciudad]]
 
         # Si la distancia es 0, es que no hay conexión entre las poblaciones. Luego el individuo no es válido
         if distancia == 0:
@@ -66,28 +66,34 @@ def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
 
         # Sumamos el coste de estar en la población actual
         aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
-
     return aptitud
 
 
-def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
+def crear_poblacion(
+    num_poblaciones: int, tam_poblacion: int, aptitud: Callable, matriz_adyacencia: list
+) -> list:
     """Crea una población de individuos.
     :param num_poblaciones: Número de poblaciones.
     :param tam_poblacion: Tamaño de la población.
+    :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
     :return: Lista de listas que representan individuos.
     """
     # Creamos una lista de listas con el tamaño de la población
     poblacion = []
-    for i in range(tam_poblacion):
+    while len(poblacion) < tam_poblacion:
         # Creamos un individuo aleatorio
         individuo = list(range(num_poblaciones))
         random.shuffle(individuo)
-        poblacion.append(individuo)
+
+        # Solo añadimos el individuo si propone un recorrido viable
+        if aptitud(individuo, matriz_adyacencia) != float("inf"):
+            poblacion.append(individuo)
     return poblacion
 
 
 def mutar(individuo: list) -> list:
-    """Muta un individuo.
+    """Muta un individuo. Puede que el camino resultante no sea válido.
     :param individuo: Lista de enteros que representa el camino.
     :return: Lista de enteros que representa el camino mutado.
     """
@@ -112,6 +118,8 @@ def crossover_partially_mapped(
     Cada 2 padres producen 2 hijos.
     :param lista_padres: Lista de todos los padres a cruzar.
     :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    :param probabilidad: Probabilidad de que se realice el crossover.
     :return: Lista de hijos.
     """
     # Incializamos la lista de hijos
@@ -187,6 +195,8 @@ def crossover_order(
     Cada 2 padres producen 2 hijos.
     :param lista_padres: Lista de todos los padres a cruzar.
     :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    :param probabilidad: Probabilidad de que se realice el crossover.
     :return: Lista de hijos.
     """
     # Incializamos la lista de hijos
@@ -260,6 +270,8 @@ def crossover_cycle(
     Cada 2 padres producen 2 hijos.
     :param lista_padres: Lista de todos los padres a cruzar.
     :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    :param probabilidad: Probabilidad de que se realice el crossover.
     :return: Lista de hijos.
     """
     # Incializamos la lista de hijos
@@ -314,11 +326,14 @@ def crossover_cycle(
     return lista_hijos
 
 
-def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable, matriz_adyacencia: list) -> list:
+def elitismo(
+    poblacion: list, num_elitismo: int, aptitud: Callable, matriz_adyacencia: list
+) -> list:
     """Selecciona los mejores individuos de la población.
     :param poblacion: Lista de individuos.
     :param num_elitismo: Número de individuos a seleccionar.
     :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
     :return: Lista de individuos seleccionados.
     """
     # Ordenamos la población por aptitud
@@ -328,12 +343,18 @@ def elitismo(poblacion: list, num_elitismo: int, aptitud: Callable, matriz_adyac
 
 
 def seleccionar_torneo(
-    poblacion: list, participantes: int, aptitud: Callable, matriz_adyacencia: list, cantidad: int = None
+    poblacion: list,
+    participantes: int,
+    aptitud: Callable,
+    matriz_adyacencia: list,
+    cantidad: int = None,
 ) -> list:
     """Selecciona los mejores individuos de la población.
     :param poblacion: Lista de individuos.
     :param participantes: Número de participantes en cada torneo.
     :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    :param cantidad: Número de individuos a seleccionar.
     :return: Lista de individuos seleccionados.
     """
     # Por defecto seleccionamos la misma cantidad de individuos que hay en la población
@@ -346,7 +367,9 @@ def seleccionar_torneo(
         # Elegimos participantes al azar
         participantes_elegidos = random.sample(poblacion, participantes)
         # Elegimos el mejor de los participantes
-        seleccionado = min(participantes_elegidos, key=lambda x: aptitud(x, matriz_adyacencia))
+        seleccionado = min(
+            participantes_elegidos, key=lambda x: aptitud(x, matriz_adyacencia)
+        )
         # Añadimos el seleccionado a la lista de seleccionados
         seleccionados.append(seleccionado)
     return seleccionados
@@ -355,7 +378,7 @@ def seleccionar_torneo(
 # Ejecución de ejemplo
 
 municipios, distancias = leer_distancias("Viajante/Distancias_ejemplo.txt")
-poblacion = crear_poblacion(len(municipios), 10)
+poblacion = crear_poblacion(len(municipios), 10, aptitud_viajante, distancias)
 
 distancias_iteraciones = []
 
@@ -366,7 +389,9 @@ for i in range(NUM_ITERACIONES):
     )
 
     # Cruzamos los seleccionados
-    hijos = crossover_cycle(seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO)
+    hijos = crossover_cycle(
+        seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
+    )
 
     # Mutamos los hijos
     for hijo in hijos:
@@ -374,7 +399,9 @@ for i in range(NUM_ITERACIONES):
             hijo = mutar(hijo)
 
     # Elitismo
-    poblacion = elitismo(poblacion + hijos, len(municipios), aptitud_viajante, distancias)
+    poblacion = elitismo(
+        poblacion + hijos, len(municipios), aptitud_viajante, distancias
+    )
 
     # Guardamos la distancia del mejor individuo
     distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
@@ -383,3 +410,7 @@ for i in range(NUM_ITERACIONES):
 plt.plot(distancias_iteraciones)
 plt.show()
 print(poblacion[0])
+
+# Imprimimos el recorrido con los nombres de los municipios
+for i in poblacion[0]:
+    print(municipios[i])
