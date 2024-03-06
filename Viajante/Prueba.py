@@ -123,7 +123,7 @@ def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
         # Aprovechamos a crear una lista para los números que ya están en los hijos
         ya_en_hijo_1 = []
         ya_en_hijo_2 = []
-        
+
         for j in range(len(padre_1)):
             # Vamos recorriendo los padres por fuera de la zona traspuesta
             # TODO: este if primero probablemente no sea necesario, ya que la comprobación es redundante
@@ -136,16 +136,75 @@ def crossover_partially_mapped(lista_padres: list, aptitud: Callable) -> list:
                     hijo_1[j] = padre_1[j]
                 else:
                     ya_en_hijo_1.append(padre_1[j])
-        
+
         # Completamos los hijos con los números que faltan EN ORDEN
         for j in range(len(hijo_1)):
             if hijo_1[j] == -1:
                 hijo_1[j] = ya_en_hijo_1.pop(0)
             if hijo_2[j] == -1:
                 hijo_2[j] = ya_en_hijo_2.pop(0)
-    
+
         # Añadimos los hijos a la lista de hijos
         lista_hijos.append(hijo_1)
         lista_hijos.append(hijo_2)
-    
+
+    return lista_hijos
+
+
+def crossover_order(lista_padres: list, aptitud: Callable) -> list:
+    """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
+    Resumidamente, se van eligiendo padres en orden y de 2 en 2.
+    Cada 2 padres producen 2 hijos.
+    :param lista_padres: Lista de todos los padres a cruzar.
+    :param aptitud: Función de aptitud.
+    :return: Lista de hijos.
+    """
+    # Incializamos la lista de hijos
+    lista_hijos = []
+
+    # Iteramos sobre los padres de 2 en 2
+    for i in range(0, len(lista_padres), 2):
+        # Nombramos los padres para facilidad de uso
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
+        # Elegimos dos puntos de corte aleatorios
+        punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
+
+        # Inicializamos los hijos
+        hijo_1 = [-1 for _ in range(len(padre_1))]
+        hijo_2 = [-1 for _ in range(len(padre_1))]
+
+        # El intervalo entre los puntos de corte es pasado directamente a los hijos
+        hijo_2[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
+        hijo_1[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
+
+        # Obtenemos la lista de los números de cada padre a partir del punto final de corte ordenados por aparición
+        lista_padre_1 = [padre_1[i] for i in range(punto_corte_2, len(padre_1))] + [
+            padre_1[i] for i in range(0, punto_corte_2)
+        ]
+        lista_padre_2 = [padre_2[i] for i in range(punto_corte_2, len(padre_2))] + [
+            padre_2[i] for i in range(0, punto_corte_2)
+        ]
+
+        # Eliminamos los números que ya están en el hijo contrario
+        # TODO: intentar fusionar estos dos bucles en uno solo
+        for numero in lista_padre_1:
+            if numero in hijo_2:
+                lista_padre_1.remove(numero)
+        for numero in lista_padre_2:
+            if numero in hijo_1:
+                lista_padre_2.remove(numero)
+
+        # Completamos los hijos con los números que faltan
+        for j in range(len(hijo_1)):
+            if hijo_1[j] == -1:
+                hijo_1[j] = lista_padre_2.pop(0)
+            if hijo_2[j] == -1:
+                hijo_2[j] = lista_padre_1.pop(0)
+
+        # Añadimos los hijos a la lista de hijos
+        lista_hijos.append(hijo_1)
+        lista_hijos.append(hijo_2)
+
     return lista_hijos
