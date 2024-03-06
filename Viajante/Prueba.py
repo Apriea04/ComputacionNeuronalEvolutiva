@@ -3,6 +3,12 @@ from typing import Callable
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
+NUM_ITERACIONES = 100
+PROB_MUTACION = 0.1
+PROB_CRUZAMIENTO = 0.7
+NUM_ELITISMO = 2
+PARTICIPANTES_TORNEO = 3
+
 def leer_distancias(path: str) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
     :param path: Ruta del fichero.
@@ -49,7 +55,13 @@ def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
 
     for ciudad in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
-        aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad + 1]]
+        distancia = matriz_adyacencia[individuo[ciudad]][individuo[ciudad + 1]]
+        
+        # Si la distancia es 0, es que no hay conexión entre las poblaciones. Luego el individuo no es válido
+        if distancia == 0:
+            return float("inf")
+        
+        aptitud += distancia
 
         # Sumamos el coste de estar en la población actual
         aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
@@ -69,7 +81,6 @@ def crear_poblacion(num_poblaciones: int, tam_poblacion: int) -> list:
         # Creamos un individuo aleatorio
         individuo = list(range(num_poblaciones))
         random.shuffle(individuo)
-        print(individuo)
         poblacion.append(individuo)
     return poblacion
 
@@ -291,3 +302,29 @@ def seleccionar_torneo(poblacion: list, participantes: int, aptitud: Callable, c
         seleccionados.append(seleccionado)
     return seleccionados
 
+# Ejecución de ejemplo
+
+municipios, distancias = leer_distancias("Viajante/Distancias_ejemplo.txt")
+poblacion = crear_poblacion(len(municipios), 10)
+
+distancias_iteraciones = []
+
+for i in range(NUM_ITERACIONES):
+    # Seleccionamos los individuos por torneo
+    seleccionados = seleccionar_torneo(poblacion, PARTICIPANTES_TORNEO, aptitud_viajante)
+    
+    # TODO: comprobar de aquí para abajo
+
+    # Cruzamos los seleccionados
+    hijos = crossover_cycle(seleccionados, lambda x: aptitud_viajante(x, distancias))
+
+    # Mutamos los hijos
+    for hijo in hijos:
+        if random.random() < PROB_MUTACION:
+            hijo = mutar(hijo)
+
+    # Elitismo
+    poblacion = elitismo(poblacion + hijos, NUM_ELITISMO, lambda x: aptitud_viajante(x, distancias))
+
+    # Guardamos la distancia del mejor individuo
+    distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
