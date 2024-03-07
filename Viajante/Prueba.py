@@ -423,7 +423,7 @@ def ejecutar_ejemplo_viajante(
     # Ejecución de ejemplo
 
     municipios, distancias = leer_distancias(
-        "Viajante/Datos/matriz10.txt", "Viajante/Datos/pueblos10.txt"
+        "Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt"
     )
     if verbose:
         print("Municipios leídos.")

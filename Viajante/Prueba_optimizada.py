@@ -44,7 +44,12 @@ def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -
         distancias = np.loadtxt(distancias_io)
 
     else:
-        nombres_municipios = np.loadtxt(path_nombres, dtype=str, delimiter="\n").tolist()
+        with open(path_nombres, 'r', encoding='utf-8') as file:
+            nombres = file.readlines()
+            
+        nombres = [nombre.strip() for nombre in nombres]
+        nombres_municipios = np.array(nombres)
+
         distancias = np.loadtxt(path_distancias, dtype=float)
 
     return nombres_municipios, distancias
@@ -197,3 +202,317 @@ def crossover_partially_mapped_optimizado(lista_padres: np.ndarray, aptitud: Cal
 
     return np.array(lista_hijos)
 
+def crossover_order_optimizado(
+    lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float
+) -> np.ndarray:
+    """
+    Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
+    Resumidamente, se eligen padres de 2 en 2 y cada par produce 2 hijos.
+    
+    :param lista_padres: Array de NumPy de todos los padres a cruzar.
+    :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
+    :param probabilidad: Probabilidad de que se realice el crossover.
+    :return: Array de NumPy que representa la lista de hijos.
+    """
+    num_padres, tam_individuo = lista_padres.shape
+    
+    # Inicializamos la matriz de hijos
+    lista_hijos = np.zeros_like(lista_padres)
+
+    # Iteramos sobre los padres de 2 en 2
+    for i in range(0, num_padres, 2):
+        if np.random.rand() > probabilidad:
+            lista_hijos[i] = lista_padres[i]
+            lista_hijos[i + 1] = lista_padres[i + 1]
+            continue
+
+        # Nombramos los padres para facilidad de uso
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
+        # Elegimos dos puntos de corte aleatorios
+        punto_corte_1, punto_corte_2 = sorted(np.random.choice(tam_individuo, 2, replace=False))
+
+        # Inicializamos los hijos
+        hijo_1 = np.full_like(padre_1, -1)
+        hijo_2 = np.full_like(padre_2, -1)
+
+        # El intervalo entre los puntos de corte es pasado directamente a los hijos
+        hijo_2[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
+        hijo_1[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
+
+        # Obtenemos la lista de los números de cada padre a partir del punto final de corte ordenados por aparición
+        lista_padre_1 = np.concatenate([padre_1[punto_corte_2:], padre_1[:punto_corte_2]])
+        lista_padre_2 = np.concatenate([padre_2[punto_corte_2:], padre_2[:punto_corte_2]])
+
+        # Eliminamos los números que ya están en el hijo contrario
+        lista_padre_1 = lista_padre_1[~np.isin(lista_padre_1, hijo_2)]
+        lista_padre_2 = lista_padre_2[~np.isin(lista_padre_2, hijo_1)]
+
+        # Completamos los hijos con los números que faltan
+        hijo_1[hijo_1 == -1] = lista_padre_2
+        hijo_2[hijo_2 == -1] = lista_padre_1
+
+        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
+        # Si no son válidos, añadimos los padres a la lista de hijos
+        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
+            lista_hijos[i] = padre_1
+        else:
+            lista_hijos[i] = hijo_1
+
+        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
+            lista_hijos[i + 1] = padre_2
+        else:
+            lista_hijos[i + 1] = hijo_2
+
+    return lista_hijos
+
+def crossover_cycle_optimizado(
+    lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float
+) -> np.ndarray:
+    """
+    Realiza el cycle crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
+    Resumidamente, se eligen padres de 2 en 2 y cada par produce 2 hijos.
+
+    :param lista_padres: Array de NumPy de todos los padres a cruzar.
+    :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
+    :param probabilidad: Probabilidad de que se realice el crossover.
+    :return: Array de NumPy que representa la lista de hijos.
+    """
+    num_padres, tam_individuo = lista_padres.shape
+
+    # Inicializamos la matriz de hijos
+    lista_hijos = np.zeros_like(lista_padres)
+
+    # Iteramos sobre los padres de 2 en 2
+    for i in range(0, num_padres, 2):
+        if np.random.rand() > probabilidad:
+            lista_hijos[i] = lista_padres[i]
+            lista_hijos[i + 1] = lista_padres[i + 1]
+            continue
+
+        # Nombramos los padres para facilidad de uso
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
+        # Inicializamos los hijos
+        hijo_1 = np.full_like(padre_1, -1)
+        hijo_2 = np.full_like(padre_2, -1)
+
+        # Cada hijo tendrá como base el padre con mismo número
+        # Hacemos el primer ciclo de cada hijo
+        j = 0
+        while hijo_1[j] == -1:
+            hijo_1[j] = padre_1[j]
+            j = np.where(padre_2 == padre_1[j])[0][0]
+
+        j = 0
+        while hijo_2[j] == -1:
+            hijo_2[j] = padre_2[j]
+            j = np.where(padre_1 == padre_2[j])[0][0]
+
+        # Completamos los hijos con los números que faltan. Serán del padre contrario
+        hijo_1[hijo_1 == -1] = padre_2[hijo_1 == -1]
+        hijo_2[hijo_2 == -1] = padre_1[hijo_2 == -1]
+
+        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
+        # Si no son válidos, añadimos los padres a la lista de hijos
+        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
+            lista_hijos[i] = padre_1
+        else:
+            lista_hijos[i] = hijo_1
+
+        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
+            lista_hijos[i + 1] = padre_2
+        else:
+            lista_hijos[i + 1] = hijo_2
+
+    return lista_hijos
+
+def elitismo_optimizado(
+    poblacion: np.ndarray, num_elitismo: int, aptitud: Callable, matriz_adyacencia: np.ndarray
+) -> np.ndarray:
+    """
+    Selecciona los mejores individuos de la población utilizando NumPy para optimizar el proceso.
+
+    :param poblacion: Array de NumPy que representa la población de individuos.
+    :param num_elitismo: Número de individuos a seleccionar.
+    :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
+    :return: Array de NumPy que representa los individuos seleccionados.
+    """
+    # Obtenemos los índices de la población ordenada por aptitud
+    indices_ordenados = np.argsort([aptitud(individuo, matriz_adyacencia) for individuo in poblacion])
+
+    # Seleccionamos los num_elitismo primeros individuos
+    elitismo_seleccionado = poblacion[indices_ordenados[:num_elitismo]]
+
+    return elitismo_seleccionado
+
+def seleccionar_torneo_optimizado(
+    poblacion: np.ndarray,
+    participantes: int,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    cantidad: int = None,
+) -> np.ndarray:
+    """
+    Selecciona los mejores individuos de la población utilizando el método de torneo con NumPy para optimizar el proceso.
+
+    :param poblacion: Array de NumPy que representa la población de individuos.
+    :param participantes: Número de participantes en cada torneo.
+    :param aptitud: Función de aptitud.
+    :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
+    :param cantidad: Número de individuos a seleccionar.
+    :return: Array de NumPy que representa los individuos seleccionados.
+    """
+    # Por defecto, seleccionamos la misma cantidad de individuos que hay en la población
+    if cantidad is None:
+        cantidad = len(poblacion)
+
+    # Generamos índices aleatorios para los participantes en cada torneo
+    indices_participantes = np.random.choice(len(poblacion), size=(cantidad, participantes), replace=True)
+
+    # Evaluamos la aptitud de los participantes para cada torneo
+    aptitudes_torneo = np.array([
+        [aptitud(poblacion[i], matriz_adyacencia) for i in torneo] for torneo in indices_participantes
+    ])
+
+    # Encontramos el índice del mínimo en cada torneo
+    indices_ganadores = np.argmin(aptitudes_torneo, axis=1)
+
+    # Seleccionamos los individuos ganadores
+    seleccionados = poblacion[indices_participantes[np.arange(cantidad), indices_ganadores]]
+
+    return seleccionados
+
+
+def ejecutar_ejemplo_viajante(
+    dibujar: bool = False, verbose: bool = True, parada_en_media=False
+):
+    # Ejecución de ejemplo
+
+    municipios, distancias = leer_distancias_optimizada(
+        "Viajante/Datos/matriz10.txt", "Viajante/Datos/pueblos10.txt"
+    )
+    
+    if verbose:
+        print("Municipios leídos.")
+    
+    poblacion = crear_poblacion_optimizada(
+        len(municipios), NUM_INDIVIDUOS, aptitud_viajante_optimizada, distancias, verbose
+    )
+    
+    if verbose:
+        print("Población inicial:")
+        for individuo in poblacion:
+            print(individuo)
+
+    distancias_iteraciones = []
+    distancias_medias = []
+
+    for i in range(NUM_ITERACIONES):
+        # Seleccionamos los individuos por torneo
+        seleccionados = seleccionar_torneo_optimizado(
+            poblacion, PARTICIPANTES_TORNEO, aptitud_viajante_optimizada, distancias
+        )
+
+        # Cruzamos los seleccionados
+        hijos = crossover_cycle_optimizado(
+            seleccionados, aptitud_viajante_optimizada, distancias, PROB_CRUZAMIENTO
+        )
+
+        # Mutamos los hijos
+        for hijo in hijos:
+            if np.random.rand() < PROB_MUTACION:
+                hijo = mutar_optimizada(hijo)
+
+        # Elitismo
+        poblacion = elitismo_optimizado(
+            np.concatenate((poblacion, hijos)), len(municipios), aptitud_viajante_optimizada, distancias
+        )
+
+        # Guardamos la distancia del mejor individuo
+        distancias_iteraciones.append(aptitud_viajante_optimizada(poblacion[0], distancias, True))
+
+        # Guardamos la distancia media de la población
+        distancias_medias.append(
+            np.mean([aptitud_viajante_optimizada(individuo, distancias, True) for individuo in poblacion])
+        )
+
+        if verbose:
+            # Numero de iteración
+            print("Iteración {i}".format(i=i))
+            # Distancia del mejor individuo
+            print(
+                "Distancia mejor individuo: {dist}".format(
+                    dist=distancias_iteraciones[-1]
+                )
+            )
+            # Distancia media
+            print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
+
+        if (
+            parada_en_media
+            and i > 10
+            and distancias_medias[-1] == distancias_medias[-10]
+        ):
+            break
+
+    # Ordenamos los individuos por aptitud
+    poblacion = poblacion[np.argsort([aptitud_viajante_optimizada(x, distancias, True) for x in poblacion])]
+    mejor_distancia = aptitud_viajante_optimizada(poblacion[0], distancias, True)
+    print("Mejor distancia: ", mejor_distancia)
+
+    if dibujar:
+        # Mostramos la evolución de la distancia con matplotlib
+        plt.plot(distancias_iteraciones, label="Distancia mejor individuo")
+        plt.plot(distancias_medias, label="Distancia media")
+        # Añadir un recuadro con la menor distancia
+        plt.text(0, 0, "Mejor distancia: {dist}".format(dist=mejor_distancia))
+        plt.legend()
+        plt.show()
+        print(poblacion[0])
+        print(distancias_iteraciones[-1])
+
+    if verbose:
+        # Imprimimos el recorrido con los nombres de los municipios
+        for i in poblacion[0]:
+            print(municipios[i])
+
+    return distancias_iteraciones, distancias_medias
+
+if __name__ == "__main__":
+    mejores_aptitudes = []
+    distancias_medias = []
+
+    for i in range(10):
+        aptitudes_mejor_individuo, distancias_media = ejecutar_ejemplo_viajante(
+            dibujar=False, verbose=True, parada_en_media=True
+        )
+        mejores_aptitudes.append(aptitudes_mejor_individuo)
+        distancias_medias.append(distancias_media)
+
+    # Mostramos la evolución de la distancia del mejor individuo con matplotlib
+    for i, aptitudes in enumerate(mejores_aptitudes):
+        plt.plot(aptitudes, label="Mejor individuo {i}".format(i=i))
+    plt.title("Evolución de la distancia del mejor individuo")
+    plt.xlabel("Iteración")
+    plt.ylabel("Distancia")
+    plt.legend()
+    plt.show()
+
+    # Mostramos la evolución de la distancia media y del mejor individuo con matplotlib
+    plt.clf()
+    for i, (distancias_media, aptitudes_mejor_individuo) in enumerate(
+        zip(distancias_medias, mejores_aptitudes)
+    ):
+        plt.plot(distancias_media, label="Media {i}".format(i=i))
+        plt.plot(aptitudes_mejor_individuo, label="Mejor individuo {i}".format(i=i))
+    plt.title("Evolución de la distancia media y del mejor individuo")
+    plt.xlabel("Iteración")
+    plt.ylabel("Distancia")
+    plt.legend()
+    plt.show()
