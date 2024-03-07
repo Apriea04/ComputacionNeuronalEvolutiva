@@ -10,32 +10,43 @@ PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
 NUM_INDIVIDUOS = 100
 
-
-def leer_distancias(path: str) -> tuple:
+def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
-    :param path: Ruta del fichero.
+    :param path_distancias: Ruta del fichero. Puede contener una matriz separando los valores por espacios, o los nombres de los municipios entrecomillados precediendo cada uno a la fila de distancias correspondiente.
+    :param path_nombres: Ruta al fichero que contiene los nombres.
     :return: lista de nombres, matriz de distancias.
     """
     # Inicializamos una lista para los nombres de los municipios y una lista de listas para la matriz de números
     nombres_municipios = []
     matriz_numeros = []
+    
+    if path_nombres is None:
 
-    # Abrimos el archivo para lectura
-    with open(path, "r", encoding="utf-8") as archivo:
-        # Iteramos sobre cada línea del archivo
-        for linea in archivo:
-            # Dividimos la línea en dos partes: el nombre del municipio y los números
-            # Primero eliminamos las comillas y luego dividimos usando el primer espacio encontrado
-            partes = linea.strip().split('"')
-            nombre_municipio = partes[1].strip()
-            numeros = partes[2].strip().split()
+        # Abrimos el archivo para lectura
+        with open(path_distancias, "r", encoding="utf-8") as archivo:
+            # Iteramos sobre cada línea del archivo
+            for linea in archivo:
+                # Dividimos la línea en dos partes: el nombre del municipio y los números
+                # Primero eliminamos las comillas y luego dividimos usando el primer espacio encontrado
+                partes = linea.strip().split('"')
+                nombre_municipio = partes[1].strip()
+                numeros = partes[2].strip().split()
 
-            # Añadimos el nombre del municipio a la lista de nombres
-            nombres_municipios.append(nombre_municipio)
+                # Añadimos el nombre del municipio a la lista de nombres
+                nombres_municipios.append(nombre_municipio)
 
-            # Convertimos los números a enteros y los añadimos a la matriz
-            matriz_numeros.append([int(numero) for numero in numeros])
+                # Convertimos los números a enteros y los añadimos a la matriz
+                matriz_numeros.append([float(numero) for numero in numeros])
 
+    else:
+        # Leemos el fichero de nombres
+        with open(path_nombres, "r", encoding="utf-8") as archivo:
+            nombres_municipios = [linea.strip() for linea in archivo]
+            
+        # Leemos el fichero de distancias
+        with open(path_distancias, "r", encoding="utf-8") as archivo:
+            for linea in archivo:
+                matriz_numeros.append([float(numero) for numero in linea.strip().split()])
     # Devolvemos los nombres y la matriz
     return nombres_municipios, matriz_numeros
 
