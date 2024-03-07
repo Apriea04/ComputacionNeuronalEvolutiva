@@ -2,6 +2,8 @@ from math import sin, pi
 from typing import Callable
 import random
 
+from matplotlib import pyplot as plt
+
 INDIVIDUOS = 50
 
 
@@ -114,53 +116,65 @@ def seleccion_elitista(
     return patata
 
 
-# TODO: Implementar el algoritmo genético completo
-INDIVIDUOS = 80
+INDIVIDUOS = 50
 PROB_CROSSOVER = 0.25
-PROB_MUTACION = 0.1
-GENERACIONES = 900
+PROB_MUTACION = 0.01
+GENERACIONES = 700
+NUM_EJECUCIONES = 100
 
-mejores_aptitudes = []
-aptitudes_medias = []
 
-aptitudes_medias.append(
-    sum([aptitud_maximizar(individuo) for individuo in poblacion]) / INDIVIDUOS
-)
-mejores_aptitudes.append(max([aptitud_maximizar(individuo) for individuo in poblacion]))
+def ejecutar(INDIVIDUOS, PROB_CROSSOVER, PROB_MUTACION, GENERACIONES, poblacion=crear_poblacion(INDIVIDUOS)):
+    mejores_aptitudes = []
+    aptitudes_medias = []
 
-for _ in range(GENERACIONES):
     aptitudes_medias.append(
         sum([aptitud_maximizar(individuo) for individuo in poblacion]) / INDIVIDUOS
     )
     mejores_aptitudes.append(
         max([aptitud_maximizar(individuo) for individuo in poblacion])
     )
-    nueva_poblacion = []
-    while len(nueva_poblacion) < INDIVIDUOS:
-        seleccionados = seleccionar_ruleta(poblacion, 2)
-        hijos = crossover(seleccionados, PROB_CROSSOVER)
-        for hijo in hijos:
-            mutacion(hijo, PROB_MUTACION)
-            nueva_poblacion.append(hijo)
-        for item in nueva_poblacion:
-            poblacion.append(item)
-    poblacion = seleccion_elitista(poblacion, INDIVIDUOS)
-    if _ % 100 == 0:
-        print(f"Generación: {_}")
-        print(f"Mejor aptitud: {mejores_aptitudes[-1]}")
-print("####################")
-print(f"Generación: {GENERACIONES}")
-print(f"Mejor aptitud: {mejores_aptitudes[-1]}")
-print(f"Individuo: {decimal_de(sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])}")
-print("Binario: ", sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])
-print("####################")
 
-# Grafico con los resultados
-import matplotlib.pyplot as plt
+    for _ in range(GENERACIONES):
+        aptitudes_medias.append(
+            sum([aptitud_maximizar(individuo) for individuo in poblacion]) / INDIVIDUOS
+        )
+        mejores_aptitudes.append(
+            max([aptitud_maximizar(individuo) for individuo in poblacion])
+        )
+        nueva_poblacion = []
+        while len(nueva_poblacion) < INDIVIDUOS:
+            seleccionados = seleccionar_ruleta(poblacion, 2)
+            hijos = crossover(seleccionados, PROB_CROSSOVER)
+            for hijo in hijos:
+                mutacion(hijo, PROB_MUTACION)
+                nueva_poblacion.append(hijo)
+            for item in nueva_poblacion:
+                poblacion.append(item)
+        poblacion = seleccion_elitista(poblacion, INDIVIDUOS)
+    print("####################")
+    print(f"Generación: {GENERACIONES}")
+    print(f"Mejor aptitud: {mejores_aptitudes[-1]}")
+    print(
+        f"Individuo: {decimal_de(sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])}"
+    )
+    print("Binario: ", sorted(poblacion, key=aptitud_maximizar, reverse=True)[0])
+    print("####################")
+    
+    return (
+        max(mejores_aptitudes),
+        decimal_de(sorted(poblacion, key=aptitud_maximizar, reverse=True)[0]),
+        sorted(poblacion, key=aptitud_maximizar, reverse=True)[0],
+    )
 
-plt.plot(mejores_aptitudes, label="Mejor aptitud")
-plt.plot(aptitudes_medias, label="Aptitud media")
-plt.xlabel("Generaciones")
-plt.ylabel("Aptitud")
-plt.legend()
+
+mejores_individuos = []
+for i in range(NUM_EJECUCIONES):
+    print(f"Ejecución {i}")
+    mejores_individuos.append(ejecutar(INDIVIDUOS, PROB_CROSSOVER, PROB_MUTACION, GENERACIONES))
+    
+#Representamos los resultados con matplotlib, indicando en cada punto el valor de x
+plt.plot([i[0] for i in mejores_individuos], label="Mejor aptitud")
+plt.plot([i[1] for i in mejores_individuos], label="Valor de x")
+plt.xlabel("Ejecuciones")
+plt.ylabel("Mejor aptitud")
 plt.show()

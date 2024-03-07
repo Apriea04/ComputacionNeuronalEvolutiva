@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
-NUM_ITERACIONES = 5000
-PROB_MUTACION = 1
+NUM_ITERACIONES = 400
+PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
-NUM_INDIVIDUOS = 100
+NUM_INDIVIDUOS = 500
+
 
 def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
@@ -19,9 +20,8 @@ def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
     # Inicializamos una lista para los nombres de los municipios y una lista de listas para la matriz de números
     nombres_municipios = []
     matriz_numeros = []
-    
-    if path_nombres is None:
 
+    if path_nombres is None:
         # Abrimos el archivo para lectura
         with open(path_distancias, "r", encoding="utf-8") as archivo:
             # Iteramos sobre cada línea del archivo
@@ -42,29 +42,37 @@ def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
         # Leemos el fichero de nombres
         with open(path_nombres, "r", encoding="utf-8") as archivo:
             nombres_municipios = [linea.strip() for linea in archivo]
-            
+
         # Leemos el fichero de distancias
         with open(path_distancias, "r", encoding="utf-8") as archivo:
             for linea in archivo:
-                matriz_numeros.append([float(numero) for numero in linea.strip().split()])
+                matriz_numeros.append(
+                    [float(numero) for numero in linea.strip().split()]
+                )
     # Devolvemos los nombres y la matriz
     return nombres_municipios, matriz_numeros
 
 
-def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
+def aptitud_viajante(
+    individuo: list, matriz_adyacencia: list, tiempo_total: bool = False
+) -> float:
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
     Elementos a tener en cuenta para el cálculo de la aptitud:
     - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
     :param individuo: Lista de enteros que representa el camino.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
+    :param tiempo_total: Si es True, el tiempo total de cada ciudad se suma al coste. Si es False, no se suma.
     :return: Valor de aptitud del individuo.
     """
     # Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
     if individuo[0] != 0:
         return float("inf")
 
-    # Aptitud comienza como el tiempo en almacén
-    aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
+    if tiempo_total:
+        # Aptitud comienza como el tiempo en almacén
+        aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
+
+    aptitud = 0
 
     for ciudad in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
@@ -76,31 +84,51 @@ def aptitud_viajante(individuo: list, matriz_adyacencia) -> float:
 
         aptitud += distancia
 
-        # Sumamos el coste de estar en la población actual
-        aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
+        if tiempo_total:
+            # Sumamos el tiempo total de la población actual
+            aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
+
     return aptitud
 
 
 def crear_poblacion(
-    num_poblaciones: int, tam_poblacion: int, aptitud: Callable, matriz_adyacencia: list
+    num_poblaciones: int,
+    tam_poblacion: int,
+    aptitud: Callable,
+    matriz_adyacencia: list,
+    verbose: bool = False,
 ) -> list:
     """Crea una población de individuos.
     :param num_poblaciones: Número de poblaciones.
     :param tam_poblacion: Tamaño de la población.
     :param aptitud: Función de aptitud.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    :param verbose: Si es True, imprime información del progreso.
     :return: Lista de listas que representan individuos.
     """
     # Creamos una lista de listas con el tamaño de la población
     poblacion = []
     while len(poblacion) < tam_poblacion:
         # Creamos un individuo aleatorio
-        individuo = list(range(num_poblaciones))
+        individuo = list(range(1, num_poblaciones))
         random.shuffle(individuo)
 
+        individuo = [0] + individuo
+
         # Solo añadimos el individuo si propone un recorrido viable
-        if aptitud(individuo, matriz_adyacencia) != float("inf"):
-            poblacion.append(individuo)
+        while aptitud(individuo, matriz_adyacencia) == float("inf"):
+            random.shuffle(individuo)
+        poblacion.append(individuo)
+
+        if verbose:
+            print(
+                "Creados {n} de {t} individuos".format(
+                    n=len(poblacion), t=tam_poblacion
+                ),
+                end="\r",
+            )
+    if verbose:
+        print()
     return poblacion
 
 
@@ -387,11 +415,23 @@ def seleccionar_torneo(
     return seleccionados
 
 
-def ejecutar_ejemplo_viajante(dibujar: bool = False, verbose: bool = True):
+def ejecutar_ejemplo_viajante(
+    dibujar: bool = False, verbose: bool = True, parada_en_media=False
+):
     # Ejecución de ejemplo
 
-    municipios, distancias = leer_distancias("Viajante/Datos/Ejemplo_Dijkstra.txt")
-    poblacion = crear_poblacion(len(municipios), NUM_INDIVIDUOS, aptitud_viajante, distancias)
+    municipios, distancias = leer_distancias(
+        "Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt"
+    )
+    if verbose:
+        print("Municipios leídos.")
+    poblacion = crear_poblacion(
+        len(municipios), NUM_INDIVIDUOS, aptitud_viajante, distancias, verbose
+    )
+    if verbose:
+        print("Población inicial:")
+        for individuo in poblacion:
+            print(individuo)
 
     distancias_iteraciones = []
     distancias_medias = []
@@ -418,15 +458,46 @@ def ejecutar_ejemplo_viajante(dibujar: bool = False, verbose: bool = True):
         )
 
         # Guardamos la distancia del mejor individuo
-        distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias))
-        
+        distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias, True))
+
         # Guardamos la distancia media de la población
-        distancias_medias.append(sum(aptitud_viajante(individuo, distancias) for individuo in poblacion) / len(poblacion))
+        distancias_medias.append(
+            sum(
+                aptitud_viajante(individuo, distancias, True) for individuo in poblacion
+            )
+            / len(poblacion)
+        )
+
+        if verbose:
+            # Numero de iteración
+            print("Iteración {i}".format(i=i))
+            # Distancia del mejor individuo
+            print(
+                "Distancia mejor individuo: {dist}".format(
+                    dist=distancias_iteraciones[-1]
+                )
+            )
+            # Distancia media
+            print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
+
+        if (
+            parada_en_media
+            and i > 10
+            and distancias_medias[-1] == distancias_medias[-10]
+        ):
+            break
+
+    # Ordenamos los individuos por aptitud
+    poblacion.sort(key=lambda x: aptitud_viajante(x, distancias, True))
+    mejor_distancia = aptitud_viajante(poblacion[0], distancias, True)
+    print("Mejor distancia: ", mejor_distancia)
 
     if dibujar:
         # Mostramos la evolución de la distancia con matplotlib
         plt.plot(distancias_iteraciones, label="Distancia mejor individuo")
         plt.plot(distancias_medias, label="Distancia media")
+        # Añadir un recuadro con la menor distancia
+        plt.text(0, 0, "Mejor distancia: {dist}".format(dist=mejor_distancia))
         plt.legend()
         plt.show()
         print(poblacion[0])
@@ -444,17 +515,24 @@ if __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
 
-    for i in range(1):
-        apt, med = ejecutar_ejemplo_viajante(True)
+    for i in range(2):
+        apt, med = ejecutar_ejemplo_viajante(False, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
 
-    if False:    
+    if True:
         # Mostramos la evolución de la distancia con matplotlib
-        plt.plot([sum(x) / len(x) for x in zip(*mejores_aptitudes)])
+        for i in range(len(mejores_aptitudes)):
+            plt.plot(mejores_aptitudes[i], label="Mejor individuo {i}".format(i=i))
+        plt.legend()
         plt.show()
-        plt.plot([sum(x) / len(x) for x in zip(*distancias_medias)])
+
+        plt.clf()
+        # Dibujamos un grafico con la mejor distancia y la media de cada ejecución
+        for i in range(len(distancias_medias)):
+            plt.plot(distancias_medias[i], label="Media {i}".format(i=i))
+            plt.plot(mejores_aptitudes[i], label="Mejor individuo {i}".format(i=i))
+        plt.legend()
         plt.show()
-        print([sum(x) / len(x) for x in zip(*mejores_aptitudes)][-1])
-    
+
 # TODO: probar este crossover: https://www.youtube.com/watch?v=aFlUr05koro
