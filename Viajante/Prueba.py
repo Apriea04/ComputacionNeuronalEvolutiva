@@ -390,7 +390,7 @@ def seleccionar_torneo(
 def ejecutar_ejemplo_viajante(dibujar: bool = False, verbose: bool = True):
     # Ejecución de ejemplo
 
-    municipios, distancias = leer_distancias("Viajante/Ejemplo_Dijkstra.txt")
+    municipios, distancias = leer_distancias("Viajante/Datos/Ejemplo_Dijkstra.txt")
     poblacion = crear_poblacion(len(municipios), NUM_INDIVIDUOS, aptitud_viajante, distancias)
 
     distancias_iteraciones = []
