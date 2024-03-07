@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
-NUM_ITERACIONES = 400
+NUM_ITERACIONES = 4000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
-NUM_INDIVIDUOS = 500
+NUM_INDIVIDUOS = 100
 
 
 def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
@@ -59,6 +59,7 @@ def aptitud_viajante(
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
     Elementos a tener en cuenta para el cálculo de la aptitud:
     - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
+    
     :param individuo: Lista de enteros que representa el camino.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
     :param tiempo_total: Si es True, el tiempo total de cada ciudad se suma al coste. Si es False, no se suma.
@@ -67,12 +68,12 @@ def aptitud_viajante(
     # Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
     if individuo[0] != 0:
         return float("inf")
+    
+    aptitud = 0
 
     if tiempo_total:
         # Aptitud comienza como el tiempo en almacén
         aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
-
-    aptitud = 0
 
     for ciudad in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
@@ -110,14 +111,15 @@ def crear_poblacion(
     poblacion = []
     while len(poblacion) < tam_poblacion:
         # Creamos un individuo aleatorio
-        individuo = list(range(1, num_poblaciones))
-        random.shuffle(individuo)
+        resto_recorrido = list(range(1, num_poblaciones))
+        random.shuffle(resto_recorrido)
 
-        individuo = [0] + individuo
+        individuo = [0] + resto_recorrido
 
         # Solo añadimos el individuo si propone un recorrido viable
         while aptitud(individuo, matriz_adyacencia) == float("inf"):
-            random.shuffle(individuo)
+            random.shuffle(resto_recorrido)
+            individuo = [0] + resto_recorrido
         poblacion.append(individuo)
 
         if verbose:
@@ -421,7 +423,7 @@ def ejecutar_ejemplo_viajante(
     # Ejecución de ejemplo
 
     municipios, distancias = leer_distancias(
-        "Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt"
+        "Viajante/Datos/matriz10.txt", "Viajante/Datos/pueblos10.txt"
     )
     if verbose:
         print("Municipios leídos.")
@@ -443,7 +445,7 @@ def ejecutar_ejemplo_viajante(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_partially_mapped(
+        hijos = crossover_cycle(
             seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
         )
 
@@ -515,7 +517,7 @@ if __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
 
-    for i in range(2):
+    for i in range(10):
         apt, med = ejecutar_ejemplo_viajante(False, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
