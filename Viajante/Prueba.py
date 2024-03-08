@@ -8,7 +8,7 @@ NUM_ITERACIONES = 4000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
-NUM_INDIVIDUOS = 100
+NUM_INDIVIDUOS = 10
 
 
 def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
@@ -59,7 +59,7 @@ def aptitud_viajante(
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
     Elementos a tener en cuenta para el cálculo de la aptitud:
     - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
-    
+
     :param individuo: Lista de enteros que representa el camino.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
     :param tiempo_total: Si es True, el tiempo total de cada ciudad se suma al coste. Si es False, no se suma.
@@ -68,7 +68,7 @@ def aptitud_viajante(
     # Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
     if individuo[0] != 0:
         return float("inf")
-    
+
     aptitud = 0
 
     if tiempo_total:
@@ -175,8 +175,8 @@ def crossover_partially_mapped(
             continue
 
         # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i]
-        padre_2 = lista_padres[i + 1]
+        padre_1 = lista_padres[i][1:]
+        padre_2 = lista_padres[i + 1][1:]
 
         # Elegimos dos puntos de corte aleatorios
         punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
@@ -217,14 +217,14 @@ def crossover_partially_mapped(
         # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_1)
+            lista_hijos.append([0] + padre_1)
         else:
-            lista_hijos.append(hijo_1)
+            lista_hijos.append([0] + hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_2)
+            lista_hijos.append([0] + padre_2)
         else:
-            lista_hijos.append(hijo_2)
+            lista_hijos.append([0] + hijo_2)
 
     return lista_hijos
 
@@ -252,8 +252,8 @@ def crossover_order(
             continue
 
         # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i]
-        padre_2 = lista_padres[i + 1]
+        padre_1 = lista_padres[i][1:]
+        padre_2 = lista_padres[i + 1][1:]
 
         # Elegimos dos puntos de corte aleatorios
         punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
@@ -293,14 +293,14 @@ def crossover_order(
                 # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_1)
+            lista_hijos.append([0]+padre_1)
         else:
-            lista_hijos.append(hijo_1)
+            lista_hijos.append([0]+hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_2)
+            lista_hijos.append([0]+padre_2)
         else:
-            lista_hijos.append(hijo_2)
+            lista_hijos.append([0]+hijo_2)
     return lista_hijos
 
 
@@ -327,8 +327,8 @@ def crossover_cycle(
             continue
 
         # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i]
-        padre_2 = lista_padres[i + 1]
+        padre_1 = lista_padres[i][1:]
+        padre_2 = lista_padres[i + 1][1:]
 
         # Inicializamos los hijos
         hijo_1 = [-1 for _ in range(len(padre_1))]
@@ -356,14 +356,14 @@ def crossover_cycle(
         # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_1)
+            lista_hijos.append([0]+padre_1)
         else:
-            lista_hijos.append(hijo_1)
+            lista_hijos.append([0]+hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_2)
+            lista_hijos.append([0]+padre_2)
         else:
-            lista_hijos.append(hijo_2)
+            lista_hijos.append([0]+hijo_2)
 
     return lista_hijos
 
@@ -416,14 +416,71 @@ def seleccionar_torneo(
         seleccionados.append(seleccionado)
     return seleccionados
 
-
+def crossover_edge_recombination(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+) -> list:
+    """Realiza el edge recombination crossover según se explica en https://en.wikipedia.org/wiki/Edge_recombination_operator
+    https://www.rubicite.com/Tutorials/GeneticAlgorithms/CrossoverOperators/EdgeRecombinationCrossoverOperator.aspx
+    """
+    
+    # TODO: probar esta función
+    
+    lista_hijos = []
+    
+    for i in range(0, len(lista_padres), 2):
+        
+        if random.random() > probabilidad:
+            lista_hijos.append(lista_padres[i])
+            lista_hijos.append(lista_padres[i + 1])
+            continue
+        
+        padre_1 = lista_padres[i][1:]
+        padre_2 = lista_padres[i + 1][1:]
+        
+        # Creamos el diccionario de vecinos
+        vecinos = {}
+        
+        # Recorremos los padres
+        for j in range(1, len(padre_1)):
+            # A excepción del último elemento, en cuyo caso solo tiene el vecino "anterior"
+            if j == len(padre_1)-1:
+                vecinos[padre_1[j]] = vecinos[padre_1][j] + [padre_1[j-1]]
+                vecinos[padre_2[j]] = vecinos[padre_2][j] + [padre_2[j-1]]
+            # En el resto de casos tienen dos vecinos que añadir
+            else:
+                vecinos[padre_1[j]] = vecinos[padre_1][j] + [padre_1[j-1], padre_1[j+1]]
+                vecinos[padre_2[j]] = vecinos[padre_2][j] + [padre_2[j-1], padre_2[j+1]]
+                
+        # Una vez tenemos los vecinos, creamos el hijo
+        hijo = []
+        
+        # El primer elemento del hijo es el 0
+        x = 0
+        
+        # Mientras no hayamos completado el hijo
+        while len(hijo) < len(padre_1):
+            # Añadimos el elemento actual
+            hijo.append(x)
+            
+            # Eliminamos el elemento de las listas de vecinos
+            for ciudad, vecinos in vecinos.items():
+                if x in vecinos:
+                    vecinos[ciudad] = vecinos.remove(x)
+            
+            # Si la lista de de vecinos de la ciudad actual está vacía, cogemos un vecino aleatorio
+            if vecinos[x] == []:
+                x = random.choice([ciudad for ciudad, in vecinos if ciudad not in hijo])
+            
+            # Si no está vacía, determinamos el vecino de X que tiene menos vecinos
+            else:
+                x = min(vecinos[x], key=lambda x: len(vecinos[x]))
+                           
 def ejecutar_ejemplo_viajante(
     dibujar: bool = False, verbose: bool = True, parada_en_media=False
 ):
     # Ejecución de ejemplo
 
     municipios, distancias = leer_distancias(
-        "Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt"
+        "Viajante/Datos/Distancias_ejemplo.txt"
     )
     if verbose:
         print("Municipios leídos.")
@@ -445,7 +502,7 @@ def ejecutar_ejemplo_viajante(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_cycle(
+        hijos = crossover_order(
             seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
         )
 
@@ -482,7 +539,7 @@ def ejecutar_ejemplo_viajante(
             # Distancia media
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
 
-        if (
+        if ( False and
             parada_en_media
             and i > 10
             and distancias_medias[-1] == distancias_medias[-10]
@@ -517,7 +574,7 @@ if __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
 
-    for i in range(10):
+    for i in range(1):
         apt, med = ejecutar_ejemplo_viajante(False, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
@@ -537,4 +594,4 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
 
-# TODO: probar este crossover: https://www.youtube.com/watch?v=aFlUr05koro
+# TODO: probar este crossover: https://www.youtube.com/watch?v=aFlUr05kor

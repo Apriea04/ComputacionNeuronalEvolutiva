@@ -9,7 +9,31 @@ NUM_ITERACIONES = 4000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.7
 PARTICIPANTES_TORNEO = 3
-NUM_INDIVIDUOS = 100
+NUM_INDIVIDUOS = 1000
+
+
+def eliminar_ceros_matriz(matriz: np.ndarray) -> np.ndarray:
+    """
+    Elimina los ceros de una matriz de NumPy, sustituyéndolos por float("inf"), a excepción de la diagonal principal.
+
+    :param matriz: Array de NumPy.
+    :return: Array de NumPy sin ceros.
+    """
+    # Obtener dimensiones de la matriz
+    filas, columnas = matriz.shape
+
+    # Crear una copia de la matriz para no modificar la original
+    matriz_sin_ceros = matriz.copy()
+
+    # Iterar sobre cada elemento de la matriz
+    for i in range(filas):
+        for j in range(columnas):
+            # Verificar si el elemento no está en la diagonal principal y es igual a cero
+            if i != j and matriz_sin_ceros[i, j] == 0:
+                # Sustituir el cero por infinito
+                matriz_sin_ceros[i, j] = float("inf")
+
+    return matriz_sin_ceros
 
 
 def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -> tuple:
@@ -17,14 +41,14 @@ def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -
     Lee una matriz de distancias de un fichero de texto utilizando NumPy para optimizar el proceso.
     Si se proporciona un path_nombres, lee los nombres desde ese archivo; de lo contrario, asume que
     están en el mismo archivo que las distancias, en líneas precedidas por nombres entrecomillados.
-    
+
     :param path_distancias: Ruta del fichero de distancias.
     :param path_nombres: Ruta al fichero que contiene los nombres (opcional).
     :return: Tuple que contiene una lista de nombres y un array de distancias de NumPy.
     """
     if path_nombres is None:
         # Primero leemos todo el archivo para separar nombres de distancias
-        with open(path_distancias, 'r', encoding='utf-8') as file:
+        with open(path_distancias, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
         nombres_municipios = []
@@ -40,13 +64,14 @@ def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -
 
         # Usamos np.loadtxt con una StringIO para convertir las distancias a un array de NumPy
         from io import StringIO
+
         distancias_io = StringIO("\n".join(distancias_str))
         distancias = np.loadtxt(distancias_io)
 
     else:
-        with open(path_nombres, 'r', encoding='utf-8') as file:
+        with open(path_nombres, "r", encoding="utf-8") as file:
             nombres = file.readlines()
-            
+
         nombres = [nombre.strip() for nombre in nombres]
         nombres_municipios = np.array(nombres)
 
@@ -54,13 +79,14 @@ def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -
 
     return nombres_municipios, distancias
 
+
 def aptitud_viajante_optimizada(
     individuo: np.ndarray, matriz_adyacencia: np.ndarray, tiempo_total: bool = False
 ) -> float:
     """
     Devuelve la aptitud de un individuo utilizando NumPy para optimizar los cálculos.
     La aptitud se define como la suma de costes (distancias) de recorrer el camino indicado por el individuo.
-    
+
     :param individuo: Array de NumPy de enteros que representa el camino.
     :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
     :param tiempo_total: Si es True, se suma también el tiempo total en cada ciudad al coste.
@@ -69,33 +95,35 @@ def aptitud_viajante_optimizada(
     # Verificar si el inicio es correcto
     if individuo[0] != 0:
         return float("inf")
-    
+
     # Calcular las distancias entre nodos consecutivos
     distancias = matriz_adyacencia[individuo[:-1], individuo[1:]]
-    
+
     # Si hay algún 0 en las distancias, el camino no es válido
     if np.any(distancias == 0):
         return float("inf")
-    
+
     aptitud = np.sum(distancias)
-    
+
     if tiempo_total:
         # Añadir el tiempo de estancia en cada ciudad, incluyendo la inicial y la final
         tiempo_estancia = matriz_adyacencia[individuo, individuo]
         aptitud += np.sum(tiempo_estancia)
-    
+
     return aptitud
+
 
 def crear_poblacion_optimizada(
     num_poblaciones: int,
     tam_poblacion: int,
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
+    eliminar_inaptos: bool = True,
     verbose: bool = False,
 ) -> np.ndarray:
     """
     Crea una población de individuos utilizando NumPy para optimizar los cálculos y la generación de números aleatorios.
-    
+
     :param num_poblaciones: Número de poblaciones.
     :param tam_poblacion: Tamaño de la población.
     :param aptitud: Función de aptitud.
@@ -109,7 +137,7 @@ def crear_poblacion_optimizada(
         resto_recorrido = np.random.permutation(np.arange(1, num_poblaciones))
         individuo = np.concatenate(([0], resto_recorrido))
 
-        while aptitud(individuo, matriz_adyacencia) == float("inf"):
+        while eliminar_inaptos and aptitud(individuo, matriz_adyacencia) == float("inf"):
             resto_recorrido = np.random.permutation(np.arange(1, num_poblaciones))
             individuo = np.concatenate(([0], resto_recorrido))
 
@@ -117,9 +145,7 @@ def crear_poblacion_optimizada(
 
         if verbose:
             print(
-                "Creados {n} de {t} individuos".format(
-                    n=i + 1, t=tam_poblacion
-                ),
+                "Creados {n} de {t} individuos".format(n=i + 1, t=tam_poblacion),
                 end="\r",
             )
 
@@ -128,10 +154,11 @@ def crear_poblacion_optimizada(
 
     return poblacion
 
+
 def mutar_optimizada(individuo: np.ndarray) -> np.ndarray:
     """
     Muta un individuo utilizando NumPy. Puede que el camino resultante no sea válido.
-    
+
     :param individuo: Array de NumPy de enteros que representa el camino.
     :return: Array de NumPy de enteros que representa el camino mutado.
     """
@@ -143,9 +170,15 @@ def mutar_optimizada(individuo: np.ndarray) -> np.ndarray:
     mutado[pos1], mutado[pos2] = mutado[pos2], mutado[pos1]
     return mutado
 
-def crossover_partially_mapped_optimizado(lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float) -> np.ndarray:
+
+def crossover_partially_mapped_optimizado(
+    lista_padres: np.ndarray,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    probabilidad: float,
+) -> np.ndarray:
     """Realiza el crossover partially mapped de manera optimizada utilizando NumPy.
-    
+
     :param lista_padres: Array de NumPy de todos los padres a cruzar.
     :param aptitud: Función de aptitud.
     :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
@@ -157,18 +190,22 @@ def crossover_partially_mapped_optimizado(lista_padres: np.ndarray, aptitud: Cal
     lista_hijos = []
 
     for i in range(0, num_padres, 2):
-        padre_1 = lista_padres[i]
-        padre_2 = lista_padres[i + 1]
+        
+        #Nombra los padres para facilidad de uso. El 0 se va a mantener siempre
+        padre_1 = lista_padres[i][1:]
+        padre_2 = lista_padres[i + 1][1:]
 
         if random.random() > probabilidad:
             lista_hijos.append(padre_1)
             lista_hijos.append(padre_2)
             continue
 
-        punto_corte_1, punto_corte_2 = sorted(random.sample(range(longitud_individuo), 2))
+        punto_corte_1, punto_corte_2 = sorted(
+            random.sample(range(longitud_individuo), 2)
+        )
 
-        hijo_1 = np.full(longitud_individuo, -1)
-        hijo_2 = np.full(longitud_individuo, -1)
+        hijo_1 = np.full(longitud_individuo-1, -1)
+        hijo_2 = np.full(longitud_individuo-1, -1)
 
         # Intercambiamos los segmentos entre los padres y los hijos
         hijo_1[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
@@ -188,27 +225,35 @@ def crossover_partially_mapped_optimizado(lista_padres: np.ndarray, aptitud: Cal
 
         completar_hijo(hijo_1, padre_1, hijo_2[punto_corte_1:punto_corte_2])
         completar_hijo(hijo_2, padre_2, hijo_1[punto_corte_1:punto_corte_2])
+        
+        #Juntamos el 0 inicial con el resto del genes
+        hijo_1 = np.insert(hijo_1, 0, 0)
+        hijo_2 = np.insert(hijo_2, 0, 0)
 
         # Añadimos a la lista de hijos si son válidos
-        if aptitud(hijo_1, matriz_adyacencia) != float('inf'):
+        if aptitud(hijo_1, matriz_adyacencia) != float("inf"):
             lista_hijos.append(hijo_1)
         else:
-            lista_hijos.append(padre_1)
+            lista_hijos.append(np.insert(padre_1, 0, 0))
 
-        if aptitud(hijo_2, matriz_adyacencia) != float('inf'):
+        if aptitud(hijo_2, matriz_adyacencia) != float("inf"):
             lista_hijos.append(hijo_2)
         else:
-            lista_hijos.append(padre_2)
+            lista_hijos.append(np.insert(padre_2, 0, 0))
 
     return np.array(lista_hijos)
 
+
 def crossover_order_optimizado(
-    lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float
+    lista_padres: np.ndarray,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    probabilidad: float,
 ) -> np.ndarray:
     """
     Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se eligen padres de 2 en 2 y cada par produce 2 hijos.
-    
+
     :param lista_padres: Array de NumPy de todos los padres a cruzar.
     :param aptitud: Función de aptitud.
     :param matriz_adyacencia: Array de NumPy que representa las distancias entre los nodos.
@@ -216,7 +261,7 @@ def crossover_order_optimizado(
     :return: Array de NumPy que representa la lista de hijos.
     """
     num_padres, tam_individuo = lista_padres.shape
-    
+
     # Inicializamos la matriz de hijos
     lista_hijos = np.zeros_like(lista_padres)
 
@@ -232,7 +277,9 @@ def crossover_order_optimizado(
         padre_2 = lista_padres[i + 1]
 
         # Elegimos dos puntos de corte aleatorios
-        punto_corte_1, punto_corte_2 = sorted(np.random.choice(tam_individuo, 2, replace=False))
+        punto_corte_1, punto_corte_2 = sorted(
+            np.random.choice(tam_individuo, 2, replace=False)
+        )
 
         # Inicializamos los hijos
         hijo_1 = np.full_like(padre_1, -1)
@@ -243,8 +290,12 @@ def crossover_order_optimizado(
         hijo_1[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
 
         # Obtenemos la lista de los números de cada padre a partir del punto final de corte ordenados por aparición
-        lista_padre_1 = np.concatenate([padre_1[punto_corte_2:], padre_1[:punto_corte_2]])
-        lista_padre_2 = np.concatenate([padre_2[punto_corte_2:], padre_2[:punto_corte_2]])
+        lista_padre_1 = np.concatenate(
+            [padre_1[punto_corte_2:], padre_1[:punto_corte_2]]
+        )
+        lista_padre_2 = np.concatenate(
+            [padre_2[punto_corte_2:], padre_2[:punto_corte_2]]
+        )
 
         # Eliminamos los números que ya están en el hijo contrario
         lista_padre_1 = lista_padre_1[~np.isin(lista_padre_1, hijo_2)]
@@ -268,8 +319,12 @@ def crossover_order_optimizado(
 
     return lista_hijos
 
+
 def crossover_cycle_optimizado(
-    lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float
+    lista_padres: np.ndarray,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    probabilidad: float,
 ) -> np.ndarray:
     """
     Realiza el cycle crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
@@ -331,8 +386,12 @@ def crossover_cycle_optimizado(
 
     return lista_hijos
 
+
 def elitismo_optimizado(
-    poblacion: np.ndarray, num_elitismo: int, aptitud: Callable, matriz_adyacencia: np.ndarray
+    poblacion: np.ndarray,
+    num_elitismo: int,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
 ) -> np.ndarray:
     """
     Selecciona los mejores individuos de la población utilizando NumPy para optimizar el proceso.
@@ -344,12 +403,15 @@ def elitismo_optimizado(
     :return: Array de NumPy que representa los individuos seleccionados.
     """
     # Obtenemos los índices de la población ordenada por aptitud
-    indices_ordenados = np.argsort([aptitud(individuo, matriz_adyacencia) for individuo in poblacion])
+    indices_ordenados = np.argsort(
+        [aptitud(individuo, matriz_adyacencia) for individuo in poblacion]
+    )
 
     # Seleccionamos los num_elitismo primeros individuos
     elitismo_seleccionado = poblacion[indices_ordenados[:num_elitismo]]
 
     return elitismo_seleccionado
+
 
 def seleccionar_torneo_optimizado(
     poblacion: np.ndarray,
@@ -373,18 +435,25 @@ def seleccionar_torneo_optimizado(
         cantidad = len(poblacion)
 
     # Generamos índices aleatorios para los participantes en cada torneo
-    indices_participantes = np.random.choice(len(poblacion), size=(cantidad, participantes), replace=True)
+    indices_participantes = np.random.choice(
+        len(poblacion), size=(cantidad, participantes), replace=True
+    )
 
     # Evaluamos la aptitud de los participantes para cada torneo
-    aptitudes_torneo = np.array([
-        [aptitud(poblacion[i], matriz_adyacencia) for i in torneo] for torneo in indices_participantes
-    ])
+    aptitudes_torneo = np.array(
+        [
+            [aptitud(poblacion[i], matriz_adyacencia) for i in torneo]
+            for torneo in indices_participantes
+        ]
+    )
 
     # Encontramos el índice del mínimo en cada torneo
     indices_ganadores = np.argmin(aptitudes_torneo, axis=1)
 
     # Seleccionamos los individuos ganadores
-    seleccionados = poblacion[indices_participantes[np.arange(cantidad), indices_ganadores]]
+    seleccionados = poblacion[
+        indices_participantes[np.arange(cantidad), indices_ganadores]
+    ]
 
     return seleccionados
 
@@ -395,20 +464,20 @@ def ejecutar_ejemplo_viajante(
     # Ejecución de ejemplo
 
     municipios, distancias = leer_distancias_optimizada(
-        "Viajante/Datos/matriz10.txt", "Viajante/Datos/pueblos10.txt"
+        "Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt"
     )
     
     if verbose:
         print("Municipios leídos.")
-    
+
     poblacion = crear_poblacion_optimizada(
-        len(municipios), NUM_INDIVIDUOS, aptitud_viajante_optimizada, distancias, verbose
+        len(municipios),
+        NUM_INDIVIDUOS,
+        aptitud_viajante_optimizada,
+        distancias,
+        False,
+        verbose,
     )
-    
-    if verbose:
-        print("Población inicial:")
-        for individuo in poblacion:
-            print(individuo)
 
     distancias_iteraciones = []
     distancias_medias = []
@@ -420,7 +489,7 @@ def ejecutar_ejemplo_viajante(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_cycle_optimizado(
+        hijos = crossover_partially_mapped_optimizado(
             seleccionados, aptitud_viajante_optimizada, distancias, PROB_CRUZAMIENTO
         )
 
@@ -431,15 +500,25 @@ def ejecutar_ejemplo_viajante(
 
         # Elitismo
         poblacion = elitismo_optimizado(
-            np.concatenate((poblacion, hijos)), len(municipios), aptitud_viajante_optimizada, distancias
+            np.concatenate((poblacion, hijos)),
+            len(municipios),
+            aptitud_viajante_optimizada,
+            distancias,
         )
 
         # Guardamos la distancia del mejor individuo
-        distancias_iteraciones.append(aptitud_viajante_optimizada(poblacion[0], distancias, True))
+        distancias_iteraciones.append(
+            aptitud_viajante_optimizada(poblacion[0], distancias, True)
+        )
 
         # Guardamos la distancia media de la población
         distancias_medias.append(
-            np.mean([aptitud_viajante_optimizada(individuo, distancias, True) for individuo in poblacion])
+            np.mean(
+                [
+                    aptitud_viajante_optimizada(individuo, distancias, True)
+                    for individuo in poblacion
+                ]
+            )
         )
 
         if verbose:
@@ -462,7 +541,11 @@ def ejecutar_ejemplo_viajante(
             break
 
     # Ordenamos los individuos por aptitud
-    poblacion = poblacion[np.argsort([aptitud_viajante_optimizada(x, distancias, True) for x in poblacion])]
+    poblacion = poblacion[
+        np.argsort(
+            [aptitud_viajante_optimizada(x, distancias, True) for x in poblacion]
+        )
+    ]
     mejor_distancia = aptitud_viajante_optimizada(poblacion[0], distancias, True)
     print("Mejor distancia: ", mejor_distancia)
 
@@ -484,13 +567,14 @@ def ejecutar_ejemplo_viajante(
 
     return distancias_iteraciones, distancias_medias
 
+
 if __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
 
-    for i in range(10):
+    for i in range(1):
         aptitudes_mejor_individuo, distancias_media = ejecutar_ejemplo_viajante(
-            dibujar=False, verbose=True, parada_en_media=True
+            dibujar=True, verbose=True, parada_en_media=True
         )
         mejores_aptitudes.append(aptitudes_mejor_individuo)
         distancias_medias.append(distancias_media)
