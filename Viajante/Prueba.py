@@ -293,14 +293,14 @@ def crossover_order(
                 # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0]+padre_1)
+            lista_hijos.append([0] + padre_1)
         else:
-            lista_hijos.append([0]+hijo_1)
+            lista_hijos.append([0] + hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0]+padre_2)
+            lista_hijos.append([0] + padre_2)
         else:
-            lista_hijos.append([0]+hijo_2)
+            lista_hijos.append([0] + hijo_2)
     return lista_hijos
 
 
@@ -356,14 +356,14 @@ def crossover_cycle(
         # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0]+padre_1)
+            lista_hijos.append([0] + padre_1)
         else:
-            lista_hijos.append([0]+hijo_1)
+            lista_hijos.append([0] + hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0]+padre_2)
+            lista_hijos.append([0] + padre_2)
         else:
-            lista_hijos.append([0]+hijo_2)
+            lista_hijos.append([0] + hijo_2)
 
     return lista_hijos
 
@@ -416,72 +416,79 @@ def seleccionar_torneo(
         seleccionados.append(seleccionado)
     return seleccionados
 
-def crossover_edge_recombination(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+
+def crossover_edge_recombination(
+    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
 ) -> list:
-    """Realiza el edge recombination crossover según se explica en https://en.wikipedia.org/wiki/Edge_recombination_operator
-    https://www.rubicite.com/Tutorials/GeneticAlgorithms/CrossoverOperators/EdgeRecombinationCrossoverOperator.aspx
-    """
-    
-    # TODO: probar esta función
-    
+    """Realiza el edge recombination crossover según se explica en la página de Wikipedia y Rubicite mencionadas."""
+
     lista_hijos = []
-    
+
     for i in range(0, len(lista_padres), 2):
-        
-        if random.random() > probabilidad:
+        if random.random() > probabilidad or i + 1 >= len(lista_padres):
             lista_hijos.append(lista_padres[i])
-            lista_hijos.append(lista_padres[i + 1])
+            if i + 1 < len(lista_padres):
+                lista_hijos.append(lista_padres[i + 1])
             continue
-        
-        padre_1 = lista_padres[i][1:]
-        padre_2 = lista_padres[i + 1][1:]
-        
+
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
+
         # Creamos el diccionario de vecinos
         vecinos = {}
-        
-        # Recorremos los padres
-        for j in range(1, len(padre_1)):
-            # A excepción del último elemento, en cuyo caso solo tiene el vecino "anterior"
-            if j == len(padre_1)-1:
-                vecinos[padre_1[j]] = vecinos[padre_1][j] + [padre_1[j-1]]
-                vecinos[padre_2[j]] = vecinos[padre_2][j] + [padre_2[j-1]]
-            # En el resto de casos tienen dos vecinos que añadir
-            else:
-                vecinos[padre_1[j]] = vecinos[padre_1][j] + [padre_1[j-1], padre_1[j+1]]
-                vecinos[padre_2[j]] = vecinos[padre_2][j] + [padre_2[j-1], padre_2[j+1]]
-                
-        # Una vez tenemos los vecinos, creamos el hijo
-        hijo = []
-        
-        # El primer elemento del hijo es el 0
-        x = 0
-        
+        for padre in [padre_1, padre_2]:
+            for j in range(len(padre)):
+                if padre[j] not in vecinos:
+                    vecinos[padre[j]] = set()
+                if j > 0:
+                    vecinos[padre[j]].add(padre[j - 1])
+                if j < len(padre) - 1:
+                    vecinos[padre[j]].add(padre[j + 1])
+
+        # Inicializamos el hijo con el almacén: 0
+        hijo = [0]
+
+        # Y eliminamos el 0 como vecino de todos los nodos
+        for vecino in list(vecinos.keys()):
+            if 0 in vecinos[vecino]:
+                vecinos[vecino].remove(0)
+
         # Mientras no hayamos completado el hijo
-        while len(hijo) < len(padre_1):
-            # Añadimos el elemento actual
+        while len(hijo) < len(padre_1) - 1:
+            actual = hijo[-1]
+            if actual not in vecinos:
+                print("patata")
+            if vecinos[actual]:
+                # Seleccionamos el vecino con menos vecinos adicionales
+                x = min(vecinos[actual], key=lambda k: len(vecinos[k]))
+            else:
+                # Escogemos un elemento no incluido en el hijo al azar
+                x = random.choice([elem for elem in vecinos.keys() if elem not in hijo])
             hijo.append(x)
             
-            # Eliminamos el elemento de las listas de vecinos
-            for ciudad, vecinos in vecinos.items():
-                if x in vecinos:
-                    vecinos[ciudad] = vecinos.remove(x)
-            
-            # Si la lista de de vecinos de la ciudad actual está vacía, cogemos un vecino aleatorio
-            if vecinos[x] == []:
-                x = random.choice([ciudad for ciudad, in vecinos if ciudad not in hijo])
-            
-            # Si no está vacía, determinamos el vecino de X que tiene menos vecinos
-            else:
-                x = min(vecinos[x], key=lambda x: len(vecinos[x]))
-                           
+            #Eliminamos el elemento de las clases de vecinos
+            del vecinos[actual]
+
+            # Eliminamos el elemento actual de las listas de vecinos
+            for vecino in list(vecinos.keys()):
+                if x in vecinos[vecino]:
+                    vecinos[vecino].remove(x)
+                # Si la lista de vecinos está vacía, eliminamos el vecino del diccionario
+                if not vecinos[vecino]:
+                    del vecinos[vecino]
+        numero = list(vecinos[list(vecinos.keys())[0]])[0]
+        hijo.append(numero)
+        lista_hijos.append(hijo)
+
+    return lista_hijos
+
+
 def ejecutar_ejemplo_viajante(
     dibujar: bool = False, verbose: bool = True, parada_en_media=False
 ):
     # Ejecución de ejemplo
 
-    municipios, distancias = leer_distancias(
-        "Viajante/Datos/Distancias_ejemplo.txt"
-    )
+    municipios, distancias = leer_distancias("Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt")
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion(
@@ -498,11 +505,15 @@ def ejecutar_ejemplo_viajante(
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
         seleccionados = seleccionar_torneo(
-            poblacion, PARTICIPANTES_TORNEO, aptitud_viajante, distancias
+            poblacion,
+            PARTICIPANTES_TORNEO,
+            aptitud_viajante,
+            distancias,
+            NUM_INDIVIDUOS * 2,
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_order(
+        hijos = crossover_edge_recombination(
             seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
         )
 
@@ -539,8 +550,9 @@ def ejecutar_ejemplo_viajante(
             # Distancia media
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
 
-        if ( False and
-            parada_en_media
+        if (
+            False
+            and parada_en_media
             and i > 10
             and distancias_medias[-1] == distancias_medias[-10]
         ):
