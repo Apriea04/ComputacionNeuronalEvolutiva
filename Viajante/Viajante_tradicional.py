@@ -1,5 +1,5 @@
 import random
-from typing import Callable
+from typing import Callable, List
 import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
@@ -177,79 +177,45 @@ def crossover_partially_mapped(
     return hijos
 
 
-def crossover_order(
-    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
-) -> list:
-    """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
-    Resumidamente, se van eligiendo padres en orden y de 2 en 2.
-    Cada 2 padres producen 2 hijos.
-    :param lista_padres: Lista de todos los padres a cruzar.
-    :param aptitud: Función de aptitud.
-    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
-    :param probabilidad: Probabilidad de que se realice el crossover.
-    :return: Lista de hijos.
-    """
-    # Incializamos la lista de hijos
-    lista_hijos = []
+def crossover_order(lista_padres: List[List[int]], aptitud: Callable, matriz_adyacencia: List[List[int]], probabilidad: float) -> List[List[int]]:
+    """Realiza el order crossover."""
+    hijos = []
 
-    # Iteramos sobre los padres de 2 en 2
-    for i in range(0, len(lista_padres), 2):
-        if random.random() > probabilidad:
-            lista_hijos.append(lista_padres[i])
-            lista_hijos.append(lista_padres[i + 1])
-            continue
-
-        # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i]
-        padre_2 = lista_padres[i + 1]
-
-        # Elegimos dos puntos de corte aleatorios
-        punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
-
-        # Inicializamos los hijos
-        hijo_1 = [-1 for _ in range(len(padre_1))]
-        hijo_2 = [-1 for _ in range(len(padre_1))]
-
-        # El intervalo entre los puntos de corte es pasado directamente a los hijos
-        hijo_2[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
-        hijo_1[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
-
-        # Obtenemos la lista de los números de cada padre a partir del punto final de corte ordenados por aparición
-        lista_padre_1 = [padre_1[i] for i in range(punto_corte_2, len(padre_1))] + [
-            padre_1[i] for i in range(0, punto_corte_2)
-        ]
-        lista_padre_2 = [padre_2[i] for i in range(punto_corte_2, len(padre_2))] + [
-            padre_2[i] for i in range(0, punto_corte_2)
-        ]
-
-        # Eliminamos los números que ya están en el hijo contrario
-        # TODO: intentar fusionar estos dos bucles en uno solo
-        for numero in lista_padre_1:
-            if numero in hijo_2:
-                lista_padre_1.remove(numero)
-        for numero in lista_padre_2:
-            if numero in hijo_1:
-                lista_padre_2.remove(numero)
-
-        # Completamos los hijos con los números que faltan
-        for j in range(len(hijo_1)):
-            if hijo_1[j] == -1:
-                hijo_1[j] = lista_padre_2.pop(0)
-            if hijo_2[j] == -1:
-                hijo_2[j] = lista_padre_1.pop(0)
-
-                # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
-        # Si no son válidos, añadimos los padres a la lista de hijos
-        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_1)
+    num_padres = len(lista_padres)
+    for i in range(0, num_padres, 2):
+        padre1 = lista_padres[i]
+        padre2 = lista_padres[(i + 1) % num_padres]  # Asegura un crossover circular entre el último y el primer padre
+        
+        if random.random() < probabilidad:
+            # Selecciona dos puntos de crossover aleatorios
+            punto1, punto2 = sorted(random.sample(range(len(padre1)), 2))
+            
+            # Genera los hijos inicialmente vacíos
+            hijo1, hijo2 = [None]*len(padre1), [None]*len(padre2)
+            
+            # Paso 1: Copia la sección del padre a los hijos
+            hijo1[punto1:punto2+1] = padre1[punto1:punto2+1]
+            hijo2[punto1:punto2+1] = padre2[punto1:punto2+1]
+            
+            # Paso 2: Completa los hijos con los genes del otro padre, manteniendo el orden y sin duplicar
+            def completar_hijo(hijo, padre_donor):
+                posicion_actual = (punto2 + 1) % len(padre1)
+                for gen in padre_donor:
+                    if gen not in hijo:
+                        hijo[posicion_actual] = gen
+                        posicion_actual = (posicion_actual + 1) % len(padre1)
+            
+            completar_hijo(hijo1, padre2[punto2+1:] + padre2[:punto2+1])
+            completar_hijo(hijo2, padre1[punto2+1:] + padre1[:punto2+1])
+            
+            hijos.append(hijo1)
+            hijos.append(hijo2)
         else:
-            lista_hijos.append(hijo_1)
-
-        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_2)
-        else:
-            lista_hijos.append(hijo_2)
-    return lista_hijos
+            # Si no hay crossover, solo copia los padres a la nueva generación
+            hijos.append(padre1[:])
+            hijos.append(padre2[:])
+    
+    return hijos
 
 
 def crossover_cycle(
@@ -510,8 +476,9 @@ def ejecutar_ejemplo_viajante(
 
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
-        seleccionados = seleccionar_ruleta_pesos(
+        seleccionados = seleccionar_torneo(
             poblacion,
+            PARTICIPANTES_TORNEO,
             aptitud_viajante,
             MATRIZ,
             NUM_INDIVIDUOS * 2,
@@ -584,7 +551,7 @@ def ejecutar_ejemplo_viajante(
 
 # ----------------------------------------------------------------------
 # Parámetros
-NUM_ITERACIONES = 2000
+NUM_ITERACIONES = 1000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
@@ -600,7 +567,7 @@ if  __name__ == "__main__":
     mejores_individuos = []
     
     for i in range(1):
-        apt, med, ind = ejecutar_ejemplo_viajante(False, True, True)
+        apt, med, ind = ejecutar_ejemplo_viajante(True, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
         mejores_individuos.append(ind)
@@ -622,5 +589,3 @@ if  __name__ == "__main__":
             plt.plot(mejores_aptitudes[i], label="Mejor individuo {i}".format(i=i))
         plt.legend()
         plt.show()
-
-# TODO: probar este crossover: https://www.youtube.com/watch?v=aFlUr05kor
