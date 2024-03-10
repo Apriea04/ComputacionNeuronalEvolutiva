@@ -14,4 +14,4 @@ def crear_matriz(size: int, path: str):
     return matriz
 
 if __name__ == "__main__":
-    crear_matriz(500, "Viajante/Datos/matriz6.data")
+    crear_matriz(10000, "Viajante/Datos/10k.data")

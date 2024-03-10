@@ -49,8 +49,6 @@ def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
 
 def aptitud_viajante(individuo: list, matriz_adyacencia: list) -> float:
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
-    Elementos a tener en cuenta para el cálculo de la aptitud:
-    - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
 
     :param individuo: Lista de enteros que representa el camino.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
@@ -177,7 +175,7 @@ def crossover_partially_mapped(
     return hijos
 
 
-def crossover_order(lista_padres: List[List[int]], aptitud: Callable, matriz_adyacencia: List[List[int]], probabilidad: float) -> List[List[int]]:
+def crossover_order(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float) -> list:
     """Realiza el order crossover."""
     hijos = []
 
@@ -551,13 +549,13 @@ def ejecutar_ejemplo_viajante(
 
 # ----------------------------------------------------------------------
 # Parámetros
-NUM_ITERACIONES = 1000
+NUM_ITERACIONES = 10000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 100
-RUTA_MATRIZ = "Viajante/Datos/matriz6.data"
-RUTA_PUEBLOS = "Viajante/Datos/pueblos6.txt"
+RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
+RUTA_PUEBLOS = "Viajante/Datos/pueblos10.txt"
 PUEBLOS, MATRIZ = leer_distancias(RUTA_MATRIZ, RUTA_PUEBLOS)
 # ----------------------------------------------------------------------
 
