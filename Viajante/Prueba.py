@@ -433,6 +433,11 @@ def crossover_edge_recombination(
 
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
+        
+        #Comprobamos que los padres no tengan numeros repetidos;
+        if len(set(padre_1)) != len(padre_1) or len(set(padre_2)) != len(padre_2):
+            print("Error: Los padres tienen números repetidos")
+            return lista_hijos
 
         # Creamos el diccionario de vecinos
         vecinos = {}
@@ -454,13 +459,13 @@ def crossover_edge_recombination(
                 vecinos[vecino].remove(0)
 
         # Mientras no hayamos completado el hijo
-        while len(hijo) < len(padre_1) - 1:
+        while len(hijo) < len(padre_1):
             actual = hijo[-1]
-            if actual not in vecinos:
-                print("patata")
+            
             if vecinos[actual]:
                 # Seleccionamos el vecino con menos vecinos adicionales
-                x = min(vecinos[actual], key=lambda k: len(vecinos[k]))
+                al_min = list(vecinos[actual])
+                x = min(al_min, key=lambda k: len(vecinos[k])) # min de una lista con un solo elemento falla, ya que k no es clave del diccionario al habe sido borrado por ser vacío en la iteración anterior
             else:
                 # Escogemos un elemento no incluido en el hijo al azar
                 x = random.choice([elem for elem in vecinos.keys() if elem not in hijo])
@@ -474,10 +479,7 @@ def crossover_edge_recombination(
                 if x in vecinos[vecino]:
                     vecinos[vecino].remove(x)
                 # Si la lista de vecinos está vacía, eliminamos el vecino del diccionario
-                if not vecinos[vecino]:
-                    del vecinos[vecino]
-        numero = list(vecinos[list(vecinos.keys())[0]])[0]
-        hijo.append(numero)
+
         lista_hijos.append(hijo)
 
     return lista_hijos
@@ -488,7 +490,7 @@ def ejecutar_ejemplo_viajante(
 ):
     # Ejecución de ejemplo
 
-    municipios, distancias = leer_distancias("Viajante/Datos/matriz6.txt", "Viajante/Datos/pueblos6.txt")
+    municipios, distancias = leer_distancias("Viajante/Datos/matriz1.txt", "Viajante/Datos/pueblos1.txt")
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion(
