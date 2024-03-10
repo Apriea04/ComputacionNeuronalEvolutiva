@@ -4,12 +4,6 @@ import matplotlib.pyplot as plt
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
-NUM_ITERACIONES = 200
-PROB_MUTACION =0.1
-PROB_CRUZAMIENTO = 0.8
-PARTICIPANTES_TORNEO = 2
-NUM_INDIVIDUOS = 30
-
 
 def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
     """Lee una matriz distancias de un fichero de texto.
@@ -53,41 +47,30 @@ def leer_distancias(path_distancias: str, path_nombres: str = None) -> tuple:
     return nombres_municipios, matriz_numeros
 
 
-def aptitud_viajante(
-    individuo: list, matriz_adyacencia: list, tiempo_total: bool = False
-) -> float:
+def aptitud_viajante(individuo: list, matriz_adyacencia: list) -> float:
     """Devuelve la aptitud de un individuo. Se define como la suma de costes (distancias) de recorrer el camino que indica el individuo.
     Elementos a tener en cuenta para el cálculo de la aptitud:
     - El viajante tiene ubicación de salida fija, el final puede ser cualquier población.
 
     :param individuo: Lista de enteros que representa el camino.
     :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos. Los valores de las coordenadas (i,i) corresponden al coste de estar en la población correspondiente.
-    :param tiempo_total: Si es True, el tiempo total de cada ciudad se suma al coste. Si es False, no se suma.
     :return: Valor de aptitud del individuo.
     """
-    # Ayuda 1: Si no comenzamos en el almacén (población 0), la aptitud será infinita
-    if individuo[0] != 0:
-        return float("inf")
-
     aptitud = 0
 
-    if tiempo_total:
-        # Aptitud comienza como el tiempo en almacén
-        aptitud = matriz_adyacencia[individuo[0]][individuo[0]]
-
-    for ciudad in range(1, len(individuo)):
+    for i in range(1, len(individuo)):
         # Sumamos el coste de para llegar a la población actual desde la anterior
-        distancia = matriz_adyacencia[individuo[ciudad - 1]][individuo[ciudad]]
+        distancia = matriz_adyacencia[individuo[i - 1]][individuo[i]]
 
         # Si la distancia es 0, es que no hay conexión entre las poblaciones. Luego el individuo no es válido
         if distancia == 0:
             return float("inf")
 
         aptitud += distancia
-
-        if tiempo_total:
-            # Sumamos el tiempo total de la población actual
-            aptitud += matriz_adyacencia[individuo[ciudad]][individuo[ciudad]]
+        
+    # TODO: Decidir si dejar o no esto
+    # SUMAMOS LA DISTANCIA DE VUELTA AL PUNTO DE PARTIDA
+    aptitud += matriz_adyacencia[individuo[-1]][individuo[0]]
 
     return aptitud
 
@@ -111,15 +94,12 @@ def crear_poblacion(
     poblacion = []
     while len(poblacion) < tam_poblacion:
         # Creamos un individuo aleatorio
-        resto_recorrido = list(range(1, num_poblaciones))
-        random.shuffle(resto_recorrido)
-
-        individuo = [0] + resto_recorrido
+        individuo = list(range(0, num_poblaciones))
+        random.shuffle(individuo)
 
         # Solo añadimos el individuo si propone un recorrido viable
         while aptitud(individuo, matriz_adyacencia) == float("inf"):
-            random.shuffle(resto_recorrido)
-            individuo = [0] + resto_recorrido
+            random.shuffle(individuo)
         poblacion.append(individuo)
 
         if verbose:
@@ -164,74 +144,37 @@ def crossover_partially_mapped(
     :param probabilidad: Probabilidad de que se realice el crossover.
     :return: Lista de hijos.
     """
-    # Incializamos la lista de hijos
-    lista_hijos = []
+    num_padres = len(lista_padres)
+    hijos = []
 
-    # Iteramos sobre los padres de 2 en 2
-    for i in range(0, len(lista_padres), 2):
-        if random.random() > probabilidad:
-            lista_hijos.append(lista_padres[i])
-            lista_hijos.append(lista_padres[i + 1])
-            continue
+    for i in range(0, num_padres, 2):
+        padre1, padre2 = lista_padres[i], lista_padres[(i + 1) % num_padres]
 
-        # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i][1:]
-        padre_2 = lista_padres[i + 1][1:]
+        if random.random() < probabilidad:
+            punto1, punto2 = sorted(random.sample(range(len(padre1)), 2))
+            hijo1, hijo2 = padre1[:], padre2[:]  # Copias de los padres para empezar
 
-        # Elegimos dos puntos de corte aleatorios
-        punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
+            # Mapeo para el hijo 1 y el hijo 2
+            mapeo1, mapeo2 = {}, {}
 
-        # Inicializamos los hijos
-        hijo_1 = [-1 for _ in range(len(padre_1))]
-        hijo_2 = [-1 for _ in range(len(padre_1))]
+            for j in range(punto1, punto2 + 1):
+                gen1, gen2 = padre1[j], padre2[j]
+                hijo1[j], hijo2[j] = gen2, gen1
+                mapeo1[gen2], mapeo2[gen1] = gen1, gen2
 
-        # El intervalo entre los puntos de corte es intercambiado e insertado en la misma posición en los hijos
-        hijo_2[punto_corte_1:punto_corte_2] = padre_1[punto_corte_1:punto_corte_2]
-        hijo_1[punto_corte_1:punto_corte_2] = padre_2[punto_corte_1:punto_corte_2]
+            # Resolución de conflictos para ambos hijos
+            for hijo, mapeo in zip((hijo1, hijo2), (mapeo1, mapeo2)):
+                for k in range(len(hijo)):
+                    if not (punto1 <= k <= punto2):
+                        while hijo[k] in mapeo:
+                            hijo[k] = mapeo[hijo[k]]
 
-        # Pasamos los número originales de los padres a los hijos siempre y cuando no estén ya presentes en ellos:
-        # Aprovechamos a crear una lista para los números que ya están en los hijos
-        ya_en_hijo_1 = []
-        ya_en_hijo_2 = []
-
-        for j in range(len(padre_1)):
-            # Vamos recorriendo los padres por fuera de la zona traspuesta
-            # TODO: este if primero probablemente no sea necesario, ya que la comprobación es redundante
-            if j < punto_corte_1 or j >= punto_corte_2:
-                if padre_2[j] not in hijo_2:
-                    hijo_2[j] = padre_2[j]
-                else:
-                    ya_en_hijo_2.append(padre_2[j])
-                if padre_1[j] not in hijo_1:
-                    hijo_1[j] = padre_1[j]
-                else:
-                    ya_en_hijo_1.append(padre_1[j])
-
-        # Completamos los hijos con los números que faltan EN ORDEN
-        for j in range(len(hijo_1)):
-            if hijo_1[j] == -1:
-                hijo_1[j] = ya_en_hijo_1.pop(0)
-            if hijo_2[j] == -1:
-                hijo_2[j] = ya_en_hijo_2.pop(0)
-
-        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
-        # Si no son válidos, añadimos los padres a la lista de hijos
-        
-        #Si hijo tiene algun valor repetido, no es válido
-        if len(hijo_1) != len(set(hijo_1)) or len(hijo_2) != len(set(hijo_2)):
-            print("j")
-        
-        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_1)
+            hijos += [hijo1, hijo2]
         else:
-            lista_hijos.append([0] + hijo_1)
+            # Si no hay crossover, se agregan los padres originales
+            hijos += [padre1, padre2]
 
-        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_2)
-        else:
-            lista_hijos.append([0] + hijo_2)
-
-    return lista_hijos
+    return hijos
 
 
 def crossover_order(
@@ -257,8 +200,8 @@ def crossover_order(
             continue
 
         # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i][1:]
-        padre_2 = lista_padres[i + 1][1:]
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
 
         # Elegimos dos puntos de corte aleatorios
         punto_corte_1, punto_corte_2 = sorted(random.sample(range(len(padre_1)), 2))
@@ -298,14 +241,14 @@ def crossover_order(
                 # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_1)
+            lista_hijos.append(padre_1)
         else:
-            lista_hijos.append([0] + hijo_1)
+            lista_hijos.append(hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_2)
+            lista_hijos.append(padre_2)
         else:
-            lista_hijos.append([0] + hijo_2)
+            lista_hijos.append(hijo_2)
     return lista_hijos
 
 
@@ -332,8 +275,8 @@ def crossover_cycle(
             continue
 
         # Nombramos los padres para facilidad de uso
-        padre_1 = lista_padres[i][1:]
-        padre_2 = lista_padres[i + 1][1:]
+        padre_1 = lista_padres[i]
+        padre_2 = lista_padres[i + 1]
 
         # Inicializamos los hijos
         hijo_1 = [-1 for _ in range(len(padre_1))]
@@ -361,14 +304,14 @@ def crossover_cycle(
         # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
         # Si no son válidos, añadimos los padres a la lista de hijos
         if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_1)
+            lista_hijos.append(padre_1)
         else:
-            lista_hijos.append([0] + hijo_1)
+            lista_hijos.append(hijo_1)
 
         if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append([0] + padre_2)
+            lista_hijos.append(padre_2)
         else:
-            lista_hijos.append([0] + hijo_2)
+            lista_hijos.append(hijo_2)
 
     return lista_hijos
 
@@ -421,51 +364,65 @@ def seleccionar_torneo(
         seleccionados.append(seleccionado)
     return seleccionados
 
+
 def seleccionar_ruleta_pesos(
     poblacion: list,
     aptitud: Callable,
     matriz_adyacencia: list,
     cantidad: int = None,
 ) -> list:
-    """Selecciona los mejores individuos de la población.
-    :param poblacion: Lista de individuos.
-    :param participantes: Número de participantes en cada torneo.
-    :param aptitud: Función de aptitud.
-    :param matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
-    :param cantidad: Número de individuos a seleccionar.
-    :return: Lista de individuos seleccionados.
-    """
-    
-    #Creamos la lista donde se almacenarán los pesos
-    aptitudes = []
-    for individuo in poblacion:
-        aptitudes.append(aptitud(individuo, matriz_adyacencia))
+    """Selecciona individuos de la población dándole más probabilidad a aquellos con menor aptitud.
 
-    # Creamos la lista de aptitudes acumuladas
-    aptitudes_acumuladas = []
-    suma = 0
-    for aptitud in aptitudes:
-        suma += aptitud
-        aptitudes_acumuladas.append(suma)
-        
-    # Por defecto seleccionamos la misma cantidad de individuos que hay en la población
+    Parameters
+    ----------
+    poblacion: Lista de individuos.
+    aptitud: Función de aptitud.
+    matriz_adyacencia: Matriz de adyacencia que representa las distancias entre los nodos.
+    cantidad: Número de individuos a seleccionar.
+
+    Returns
+    -------
+    Lista de individuos seleccionados.
+    """
+
+    # Creamos la lista donde se almacenarán los inversos de los valores de aptitud
+    aptitudes_inversas = []
+    for individuo in poblacion:
+        # Calculamos el inverso de la aptitud para que los de menor aptitud tengan mayor peso
+        valor_aptitud = aptitud(individuo, matriz_adyacencia)
+        aptitudes_inversas.append(
+            1 / valor_aptitud if valor_aptitud > 0 else float("inf")
+        )
+
+    # Calculamos el total de las aptitudes inversas para normalizar después
+    suma_inversa = sum(aptitudes_inversas)
+
+    # Creamos la lista de probabilidades acumuladas a partir de las aptitudes inversas
+    probabilidades_acumuladas = []
+    suma_acumulada = 0
+    for aptitud_inversa in aptitudes_inversas:
+        probabilidad = aptitud_inversa / suma_inversa
+        suma_acumulada += probabilidad
+        probabilidades_acumuladas.append(suma_acumulada)
+
+    # Por defecto seleccionamos la misma cantidad de individuos que hay en la población si no se especifica una cantidad
     if cantidad is None:
         cantidad = len(poblacion)
-    
+
     # Inicializamos la lista de seleccionados
     seleccionados = []
-    
+
     # Iteramos hasta que tengamos la cantidad de seleccionados que queremos
     while len(seleccionados) < cantidad:
-        # Elegimos un número al azar entre 0 y la suma de todos los pesos
-        num = random.random() * suma
-        # Elegimos el primer individuo cuya aptitud acumulada sea mayor que el número
-        for i in range(len(aptitudes_acumuladas)):
-            if aptitudes_acumuladas[i] > num:
+        num_aleatorio = random.random()
+        # Elegimos el primer individuo cuya probabilidad acumulada sea mayor que el número aleatorio
+        for i, prob_acumulada in enumerate(probabilidades_acumuladas):
+            if prob_acumulada > num_aleatorio:
                 seleccionados.append(poblacion[i])
                 break
-            
+
     return seleccionados
+
 
 def crossover_edge_recombination(
     lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
@@ -483,11 +440,6 @@ def crossover_edge_recombination(
 
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
-        
-        #Comprobamos que los padres no tengan numeros repetidos;
-        if len(set(padre_1)) != len(padre_1) or len(set(padre_2)) != len(padre_2):
-            print("Error: Los padres tienen números repetidos")
-            return lista_hijos
 
         # Creamos el diccionario de vecinos
         vecinos = {}
@@ -500,28 +452,30 @@ def crossover_edge_recombination(
                 if j < len(padre) - 1:
                     vecinos[padre[j]].add(padre[j + 1])
 
-        # Inicializamos el hijo con el almacén: 0
-        hijo = [0]
+        # Inicializamos el hijo con el primer valor de uno de los padres
+        hijo = random.sample([padre_1[0], padre_2[0]], 1)
 
-        # Y eliminamos el 0 como vecino de todos los nodos
+        # Y eliminamos ese valor como vecino de todos los nodos
         for vecino in list(vecinos.keys()):
-            if 0 in vecinos[vecino]:
-                vecinos[vecino].remove(0)
+            if hijo[0] in vecinos[vecino]:
+                vecinos[vecino].remove(hijo[0])
 
         # Mientras no hayamos completado el hijo
         while len(hijo) < len(padre_1):
             actual = hijo[-1]
-            
+
             if vecinos[actual]:
                 # Seleccionamos el vecino con menos vecinos adicionales
                 al_min = list(vecinos[actual])
-                x = min(al_min, key=lambda k: len(vecinos[k])) # min de una lista con un solo elemento falla, ya que k no es clave del diccionario al habe sido borrado por ser vacío en la iteración anterior
+                x = min(
+                    al_min, key=lambda k: len(vecinos[k])
+                )  # min de una lista con un solo elemento falla, ya que k no es clave del diccionario al habe sido borrado por ser vacío en la iteración anterior
             else:
                 # Escogemos un elemento no incluido en el hijo al azar
                 x = random.choice([elem for elem in vecinos.keys() if elem not in hijo])
             hijo.append(x)
-            
-            #Eliminamos el elemento de las clases de vecinos
+
+            # Eliminamos el elemento de las clases de vecinos
             del vecinos[actual]
 
             # Eliminamos el elemento actual de las listas de vecinos
@@ -540,16 +494,12 @@ def ejecutar_ejemplo_viajante(
 ):
     # Ejecución de ejemplo
 
-    municipios, distancias = leer_distancias("Viajante/Datos/matriz1.txt", "Viajante/Datos/pueblos1.txt")
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion(
-        len(municipios), NUM_INDIVIDUOS, aptitud_viajante, distancias, verbose
+        len(PUEBLOS), NUM_INDIVIDUOS, aptitud_viajante, MATRIZ, verbose
     )
-    
-    # Imprimimos el número de individuos únicos
-    print("Individuos únicos: ", len(set(tuple(i) for i in poblacion)))
-    
+
     if verbose:
         print("Población inicial:")
         for individuo in poblacion:
@@ -563,13 +513,13 @@ def ejecutar_ejemplo_viajante(
         seleccionados = seleccionar_ruleta_pesos(
             poblacion,
             aptitud_viajante,
-            distancias,
+            MATRIZ,
             NUM_INDIVIDUOS * 2,
         )
 
         # Cruzamos los seleccionados
         hijos = crossover_partially_mapped(
-            seleccionados, aptitud_viajante, distancias, PROB_CRUZAMIENTO
+            seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
         )
 
         # Mutamos los hijos
@@ -578,20 +528,18 @@ def ejecutar_ejemplo_viajante(
                 hijo = mutar(hijo)
 
         # Elitismo
-        #poblacion = elitismo(
-        #    poblacion + hijos, len(municipios), aptitud_viajante, distancias
-        #)
-        
+        poblacion = elitismo(
+           poblacion + hijos, len(PUEBLOS), aptitud_viajante, MATRIZ
+        )
+
         poblacion = hijos
 
         # Guardamos la distancia del mejor individuo
-        distancias_iteraciones.append(aptitud_viajante(poblacion[0], distancias, True))
+        distancias_iteraciones.append(aptitud_viajante(poblacion[0], MATRIZ))
 
         # Guardamos la distancia media de la población
         distancias_medias.append(
-            sum(
-                aptitud_viajante(individuo, distancias, True) for individuo in poblacion
-            )
+            sum(aptitud_viajante(individuo, MATRIZ) for individuo in poblacion)
             / len(poblacion)
         )
 
@@ -607,16 +555,19 @@ def ejecutar_ejemplo_viajante(
             # Distancia media
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
 
-        if (parada_en_media
+        if (
+            parada_en_media
             and i > 10
             and distancias_medias[-1] == distancias_medias[-10]
         ):
             break
-
+    
     # Ordenamos los individuos por aptitud
-    poblacion.sort(key=lambda x: aptitud_viajante(x, distancias, True))
-    mejor_distancia = aptitud_viajante(poblacion[0], distancias, True)
-    print("Mejor distancia: ", mejor_distancia)
+    poblacion.sort(key=lambda x: aptitud_viajante(x, MATRIZ))
+    mejor_distancia = aptitud_viajante(poblacion[0], MATRIZ)
+    if verbose:
+        print("Mejor distancia: ", mejor_distancia)
+        print("Mejor individuo: ", poblacion[0])
 
     if dibujar:
         # Mostramos la evolución de la distancia con matplotlib
@@ -629,22 +580,34 @@ def ejecutar_ejemplo_viajante(
         print(poblacion[0])
         print(distancias_iteraciones[-1])
 
-    if verbose:
-        # Imprimimos el recorrido con los nombres de los municipios
-        for i in poblacion[0]:
-            print(municipios[i])
+    return distancias_iteraciones, distancias_medias, poblacion[0]
 
-    return distancias_iteraciones, distancias_medias
+# ----------------------------------------------------------------------
+# Parámetros
+NUM_ITERACIONES = 2000
+PROB_MUTACION = 0.1
+PROB_CRUZAMIENTO = 0.8
+PARTICIPANTES_TORNEO = 2
+NUM_INDIVIDUOS = 100
+RUTA_MATRIZ = "Viajante/Datos/matriz6.data"
+RUTA_PUEBLOS = "Viajante/Datos/pueblos6.txt"
+PUEBLOS, MATRIZ = leer_distancias(RUTA_MATRIZ, RUTA_PUEBLOS)
+# ----------------------------------------------------------------------
 
-
-if __name__ == "__main__":
+if  __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
-
-    for i in range(10):
-        apt, med = ejecutar_ejemplo_viajante(False, True, True)
+    mejores_individuos = []
+    
+    for i in range(1):
+        apt, med, ind = ejecutar_ejemplo_viajante(False, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
+        mejores_individuos.append(ind)
+        
+    # Mostramos el mejor individuo del total
+    print("Mejor individuo de todos: ", min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)))
+    print("Mejor distancia de todos: ", aptitud_viajante(min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)), MATRIZ))
 
     if True:
         # Mostramos la evolución de la distancia con matplotlib
@@ -656,7 +619,6 @@ if __name__ == "__main__":
         plt.clf()
         # Dibujamos un grafico con la mejor distancia y la media de cada ejecución
         for i in range(len(distancias_medias)):
-            plt.plot(distancias_medias[i], label="Media {i}".format(i=i))
             plt.plot(mejores_aptitudes[i], label="Mejor individuo {i}".format(i=i))
         plt.legend()
         plt.show()

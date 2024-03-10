@@ -478,7 +478,7 @@ def ejecutar_ejemplo_viajante(
         False,
         verbose,
     )
-
+    
     distancias_iteraciones = []
     distancias_medias = []
 
