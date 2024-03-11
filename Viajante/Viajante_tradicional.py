@@ -497,8 +497,6 @@ def ejecutar_ejemplo_viajante(
            poblacion + hijos, len(PUEBLOS), aptitud_viajante, MATRIZ
         )
 
-        poblacion = hijos
-
         # Guardamos la distancia del mejor individuo
         distancias_iteraciones.append(aptitud_viajante(poblacion[0], MATRIZ))
 
@@ -564,8 +562,8 @@ if  __name__ == "__main__":
     distancias_medias = []
     mejores_individuos = []
     
-    for i in range(1):
-        apt, med, ind = ejecutar_ejemplo_viajante(True, True, True)
+    for i in range(10):
+        apt, med, ind = ejecutar_ejemplo_viajante(False, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
         mejores_individuos.append(ind)

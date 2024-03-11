@@ -1,1 +1,5 @@
 https://developers.google.com/optimization/routing/tsp?hl=es-419
+
+Mirar si con esto se puede sacar el óptimo verdadero:
+    https://developers.google.com/optimization/install?hl=es-419
+

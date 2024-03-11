@@ -550,9 +550,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         poblacion = elitismo_optimizado(
             np.concatenate((poblacion, hijos)), len(PUEBLOS), aptitud_viajante, MATRIZ
         )
-
-        poblacion = hijos
-
+     
         # Guardamos la distancia del mejor individuo
         distancias_iteraciones.append(aptitud_viajante(poblacion[0], MATRIZ))
 
@@ -581,7 +579,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     indices_ordenados = np.argsort([aptitud_viajante(sol, MATRIZ) for sol in poblacion])
     # Reordena la población
     poblacion = poblacion[indices_ordenados]
-    
+   
     mejor_distancia = aptitud_viajante(poblacion[0], MATRIZ)
 
     if verbose:
@@ -605,7 +603,7 @@ NUM_ITERACIONES = 10000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
-NUM_INDIVIDUOS = 300
+NUM_INDIVIDUOS = 100
 RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
 RUTA_PUEBLOS = "Viajante/Datos/pueblos10.txt"
 PUEBLOS, MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ, RUTA_PUEBLOS)
