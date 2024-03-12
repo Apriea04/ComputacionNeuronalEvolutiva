@@ -8,7 +8,7 @@ import numpy as np
 # Código generado por IA
 
 
-def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -> tuple:
+def leer_distancias_optimizada(path_distancias: str) -> np.ndarray:
     """
     Lee una matriz de distancias de un fichero de texto utilizando NumPy para optimizar el proceso.
     Si se proporciona un path_nombres, lee los nombres desde ese archivo; de lo contrario, asume que
@@ -18,38 +18,28 @@ def leer_distancias_optimizada(path_distancias: str, path_nombres: str = None) -
     :param path_nombres: Ruta al fichero que contiene los nombres (opcional).
     :return: Tuple que contiene una lista de nombres y un array de distancias de NumPy.
     """
-    if path_nombres is None:
-        # Primero leemos todo el archivo para separar nombres de distancias
-        with open(path_distancias, "r", encoding="utf-8") as file:
-            lines = file.readlines()
+    # Primero leemos todo el archivo para separar nombres de distancias
+    with open(path_distancias, "r", encoding="utf-8") as file:
+        lines = file.readlines()
 
-        nombres_municipios = []
-        distancias_str = []  # Guardaremos las líneas de distancias como strings para luego convertirlas juntas
+    nombres_municipios = []
+    distancias_str = []  # Guardaremos las líneas de distancias como strings para luego convertirlas juntas
 
-        for line in lines:
-            if '"' in line:  # Detectamos la presencia de un nombre
-                nombre_municipio = line.split('"')[1].strip()
-                nombres_municipios.append(nombre_municipio)
-                distancias_str.append(line.split('"')[-1].strip())
-            else:
-                distancias_str.append(line.strip())
+    for line in lines:
+        if '"' in line:  # Detectamos la presencia de un nombre
+            nombre_municipio = line.split('"')[1].strip()
+            nombres_municipios.append(nombre_municipio)
+            distancias_str.append(line.split('"')[-1].strip())
+        else:
+            distancias_str.append(line.strip())
 
-        # Usamos np.loadtxt con una StringIO para convertir las distancias a un array de NumPy
-        from io import StringIO
+    # Usamos np.loadtxt con una StringIO para convertir las distancias a un array de NumPy
+    from io import StringIO
 
-        distancias_io = StringIO("\n".join(distancias_str))
-        distancias = np.loadtxt(distancias_io)
+    distancias_io = StringIO("\n".join(distancias_str))
+    distancias = np.loadtxt(distancias_io)
 
-    else:
-        with open(path_nombres, "r", encoding="utf-8") as file:
-            nombres = file.readlines()
-
-        nombres = [nombre.strip() for nombre in nombres]
-        nombres_municipios = np.array(nombres)
-
-        distancias = np.loadtxt(path_distancias, dtype=float)
-
-    return nombres_municipios, distancias
+    return distancias
 
 
 def aptitud_viajante(individuo: np.ndarray, matriz_adyacencia: np.ndarray) -> float:
@@ -138,9 +128,11 @@ def mutar_optimizada(individuo: np.ndarray) -> np.ndarray:
     return mutado
 
 
-
 def crossover_partially_mapped_optimizado(
-    lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float
+    lista_padres: np.ndarray,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    probabilidad: float,
 ) -> np.ndarray:
     """Realiza el crossover partially mapped según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
@@ -158,8 +150,13 @@ def crossover_partially_mapped_optimizado(
         padre1, padre2 = lista_padres[i], lista_padres[(i + 1) % num_padres]
 
         if np.random.random() < probabilidad:
-            punto1, punto2 = sorted(np.random.choice(range(len(padre1)), 2, replace=False))
-            hijo1, hijo2 = padre1.copy(), padre2.copy()  # Copias de los padres para empezar
+            punto1, punto2 = sorted(
+                np.random.choice(range(len(padre1)), 2, replace=False)
+            )
+            hijo1, hijo2 = (
+                padre1.copy(),
+                padre2.copy(),
+            )  # Copias de los padres para empezar
 
             # Mapeo para el hijo 1 y el hijo 2
             mapeo1, mapeo2 = {}, {}
@@ -509,13 +506,14 @@ def crossover_edge_recombination_optimizado(
 
     return np.array(lista_hijos)
 
+
 def ejecutar_ejemplo_viajante_optimizado(
     dibujar: bool = False, verbose: bool = True, parada_en_media=False
 ):
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion_optimizada(
-        len(PUEBLOS), NUM_INDIVIDUOS, aptitud_viajante, MATRIZ, verbose
+        len(MATRIZ[0]), NUM_INDIVIDUOS, aptitud_viajante, MATRIZ, verbose
     )
 
     if verbose:
@@ -548,9 +546,9 @@ def ejecutar_ejemplo_viajante_optimizado(
 
         # Elitismo
         poblacion = elitismo_optimizado(
-            np.concatenate((poblacion, hijos)), len(PUEBLOS), aptitud_viajante, MATRIZ
+            np.concatenate((poblacion, hijos)), len(MATRIZ[0]), aptitud_viajante, MATRIZ
         )
-     
+
         # Guardamos la distancia del mejor individuo
         distancias_iteraciones.append(aptitud_viajante(poblacion[0], MATRIZ))
 
@@ -579,7 +577,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     indices_ordenados = np.argsort([aptitud_viajante(sol, MATRIZ) for sol in poblacion])
     # Reordena la población
     poblacion = poblacion[indices_ordenados]
-   
+
     mejor_distancia = aptitud_viajante(poblacion[0], MATRIZ)
 
     if verbose:
@@ -597,6 +595,7 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     return distancias_iteraciones, distancias_medias, poblacion[0]
 
+
 # ----------------------------------------------------------------------
 # Parámetros
 NUM_ITERACIONES = 10000
@@ -606,23 +605,31 @@ PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 100
 RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
 RUTA_PUEBLOS = "Viajante/Datos/pueblos10.txt"
-PUEBLOS, MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ, RUTA_PUEBLOS)
+MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ, RUTA_PUEBLOS)
 # ----------------------------------------------------------------------
 
-if  __name__ == "__main__":
+if __name__ == "__main__":
     mejores_aptitudes = []
     distancias_medias = []
     mejores_individuos = []
-    
+
     for i in range(1):
         apt, med, ind = ejecutar_ejemplo_viajante_optimizado(True, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
         mejores_individuos.append(ind)
-        
+
     # Mostramos el mejor individuo del total
-    print("Mejor individuo de todos: ", min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)))
-    print("Mejor distancia de todos: ", aptitud_viajante(min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)), MATRIZ))
+    print(
+        "Mejor individuo de todos: ",
+        min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)),
+    )
+    print(
+        "Mejor distancia de todos: ",
+        aptitud_viajante(
+            min(mejores_individuos, key=lambda x: aptitud_viajante(x, MATRIZ)), MATRIZ
+        ),
+    )
 
     if True:
         # Mostramos la evolución de la distancia con matplotlib
