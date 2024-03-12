@@ -72,6 +72,7 @@ def crear_poblacion_optimizada(
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
     verbose: bool = False,
+    unicos: bool = True,
 ) -> np.ndarray:
     """
     Crea una población de individuos utilizando NumPy para optimizar la generación.
@@ -86,12 +87,15 @@ def crear_poblacion_optimizada(
     poblacion = np.zeros((tam_poblacion, num_poblaciones), dtype=int)
 
     for i in range(tam_poblacion):
-        individuo = np.arange(num_poblaciones)
-        np.random.shuffle(individuo)
+        individuo = np.random.permutation(num_poblaciones)
 
         # Mientras el individuo no sea viable, generamos uno nuevo
         while aptitud(individuo, matriz_adyacencia) == float("inf"):
-            np.random.shuffle(individuo)
+            individuo = np.random.shuffle(num_poblaciones)
+        
+        if unicos:
+            while any(np.array_equal(individuo, p) for p in poblacion[:i]):
+                individuo = np.random.shuffle(num_poblaciones)
 
         poblacion[i] = individuo
 
@@ -508,7 +512,7 @@ def crossover_edge_recombination_optimizado(
 
 
 def ejecutar_ejemplo_viajante_optimizado(
-    dibujar: bool = False, verbose: bool = True, parada_en_media=False
+    dibujar: bool = False, verbose: bool = True, parada_en_media=False, parada_en_clones=False
 ):
     if verbose:
         print("Municipios leídos.")
@@ -523,6 +527,9 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     distancias_iteraciones = []
     distancias_medias = []
+    
+    if verbose:
+        print("Cantidad de individuos distintos: ", len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])))
 
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
@@ -565,6 +572,7 @@ def ejecutar_ejemplo_viajante_optimizado(
                 )
             )
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
+            print("Cantidad de individuos distintos: ", len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])))
 
         if (
             parada_en_media
@@ -572,6 +580,10 @@ def ejecutar_ejemplo_viajante_optimizado(
             and distancias_medias[-1] == distancias_medias[-10]
         ):
             break
+        
+        if parada_en_clones:
+            if len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])) == 1:
+                break
 
     # Ordena la población según la aptitud
     indices_ordenados = np.argsort([aptitud_viajante(sol, MATRIZ) for sol in poblacion])
@@ -602,8 +614,8 @@ NUM_ITERACIONES = 10000
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
-NUM_INDIVIDUOS = 100
-RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
+NUM_INDIVIDUOS = 20
+RUTA_MATRIZ = "Viajante/Datos/10_distancias.txt"
 MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 
@@ -613,7 +625,7 @@ if __name__ == "__main__":
     mejores_individuos = []
 
     for i in range(1):
-        apt, med, ind = ejecutar_ejemplo_viajante_optimizado(True, True, True)
+        apt, med, ind = ejecutar_ejemplo_viajante_optimizado(True, True, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
         mejores_individuos.append(ind)

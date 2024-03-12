@@ -4,6 +4,7 @@ from Viajante_tradicional_optimizado import (
     aptitud_viajante,
     seleccionar_torneo_optimizado,
     crossover_partially_mapped_optimizado,
+    crossover_edge_recombination_optimizado,
     mutar_optimizada,
     elitismo_optimizado,
 )
@@ -11,14 +12,29 @@ from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
 import numpy as np
 
+def dibujar_individuo(individuo: np.ndarray, coordenadas: np.ndarray, graph_anterior=None, sleep_time=0.001):
+    """Dibuja la ruta del mejor individuo y borra la ruta anterior."""
+    ruta_x = [coordenadas[i][0] for i in individuo]
+    ruta_y = [coordenadas[i][1] for i in individuo]
+    graph = plt.plot(ruta_x + [ruta_x[0]], ruta_y + [ruta_y[0]], marker='o', linestyle='-', color='blue')[0]
+
+    # Borra la ruta anterior si se proporciona
+    if graph_anterior is not None:
+        graph_anterior.remove()  # Borra el grafo anterior
+        
+    plt.pause(sleep_time)  # Pausa para que se vea el cambio
+    
+    return graph
+
 # ----------------------------------------------------------------------
 # Parámetros
 NUM_ITERACIONES = 10000
+MAX_MEDIAS_IGUALES = 30
 PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
-PARTICIPANTES_TORNEO = 2
+PARTICIPANTES_TORNEO = 3
 NUM_INDIVIDUOS = 100
-RUTA_MATRIZ = "Viajante/Datos/matriz1.txt"
+RUTA_MATRIZ = "Viajante/Datos/10_distancias.txt"
 RUTA_COORDENADAS = "Viajante/Datos/10_coordenadas.txt"
 MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
 COORDENADAS = leer_coordenadas(RUTA_COORDENADAS)
@@ -29,7 +45,8 @@ def ejecutar_ejemplo_viajante_optimizado(
     dibujar_evolucion: bool = False,
     verbose: bool = True,
     parada_en_media=False,
-    plot_resultados_parciales: plt = None,
+    parada_en_clones=False,
+    plot_resultados_parciales: bool = True,
 ):
     if verbose:
         print("Municipios leídos.")
@@ -41,6 +58,16 @@ def ejecutar_ejemplo_viajante_optimizado(
         print("Población inicial:")
         for individuo in poblacion:
             print(individuo)
+            
+    if plot_resultados_parciales:
+        plt.ion() # turn on interactive mode
+        plt.grid(color="salmon")
+        plt.axvline(0, color="salmon")
+        plt.axhline(0, color="salmon")
+        plt.title("Mejor Individuo")
+        plt.scatter(*zip(*COORDENADAS))
+        
+        grafico_nuevo = plt.plot(poblacion[0])[0]
 
     distancias_iteraciones = []
     distancias_medias = []
@@ -56,7 +83,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_partially_mapped_optimizado(
+        hijos = crossover_edge_recombination_optimizado(
             seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
         )
 
@@ -70,16 +97,9 @@ def ejecutar_ejemplo_viajante_optimizado(
             np.concatenate((poblacion, hijos)), len(MATRIZ[0]), aptitud_viajante, MATRIZ
         )
         
-        if plot_resultados_parciales is not None:
-            # Borramos el gráfico anterior
-            plot_resultados_parciales.clear()
-            # Dibujamos las coordenadas
-            plot_resultados_parciales = dibujar_coordenadas("Viajante/Datos/10_coordenadas.txt")
-            
-            # Dibujamos el mejor individuo
-            mejor_individuo = poblacion[0]
-            
-
+        if plot_resultados_parciales:
+            grafico_nuevo = dibujar_individuo(poblacion[0], COORDENADAS, grafico_nuevo, sleep_time=0.25)
+        
         # Guardamos la distancia del mejor individuo
         distancias_iteraciones.append(aptitud_viajante(poblacion[0], MATRIZ))
 
@@ -99,10 +119,14 @@ def ejecutar_ejemplo_viajante_optimizado(
 
         if (
             parada_en_media
-            and i > 10
+            and i > MAX_MEDIAS_IGUALES
             and distancias_medias[-1] == distancias_medias[-10]
         ):
             break
+        
+        if parada_en_clones:
+            if len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])) == 1:
+                break
 
     # Ordena la población según la aptitud
     indices_ordenados = np.argsort([aptitud_viajante(sol, MATRIZ) for sol in poblacion])
@@ -110,6 +134,10 @@ def ejecutar_ejemplo_viajante_optimizado(
     poblacion = poblacion[indices_ordenados]
 
     mejor_distancia = aptitud_viajante(poblacion[0], MATRIZ)
+    
+    if plot_resultados_parciales:
+        plt.ioff() # turn on interactive mode
+        plt.show()
 
     if verbose:
         print("Mejor distancia: ", mejor_distancia)
@@ -142,5 +170,5 @@ def dibujar_coordenadas(path: str, cuadricula: bool = True) -> plt:
 if __name__ == "__main__":
     dibujar_coordenadas("Viajante/Datos/10_coordenadas.txt")
     ejecutar_ejemplo_viajante_optimizado(
-        dibujar_evolucion=True, verbose=True, parada_en_media=True
+        dibujar_evolucion=True, verbose=True, parada_en_media=True, plot_resultados_parciales=plt, parada_en_clones=True
     )
