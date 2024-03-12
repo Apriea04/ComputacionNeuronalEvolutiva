@@ -604,8 +604,7 @@ PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 100
 RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
-RUTA_PUEBLOS = "Viajante/Datos/pueblos10.txt"
-MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ, RUTA_PUEBLOS)
+MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
