@@ -25,7 +25,7 @@ def crear_lista_coordenadas(size: int, path: str, min: float = -100, max: float 
             file.write(f"{coordenadas[i][0]} {coordenadas[i][1]}\n")
     return coordenadas
 
-def coordenadas_a_distancias(path_coordenadas: str, path_distancias: str, distancia: str = "euclidea"):
+def coordenadas_a_distancias(path_coordenadas: str, path_distancias: str, distancia: str = "euclidea", decimales: int = 2):
     """Lee el fichero con las coordenadas y produce  la matriz de distancias correspondiente"""
     
     # Leer las coordenadas
@@ -46,7 +46,7 @@ def coordenadas_a_distancias(path_coordenadas: str, path_distancias: str, distan
                 case "chebyshev":
                     matriz[i][j] = max(abs(coordenadas[i][0] - coordenadas[j][0]), abs(coordenadas[i][1] - coordenadas[j][1]))
             matriz[j][i] = matriz[i][j]
-    np.savetxt(path_distancias, matriz, fmt="%d")
+    np.savetxt(path_distancias, matriz, fmt=f"%.{decimales}f")
     
 
 if __name__ == "__main__":
