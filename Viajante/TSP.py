@@ -3,7 +3,7 @@ from python_tsp.exact import solve_tsp_dynamic_programming
 from Viajante_tradicional import leer_distancias
 import sys
 
-distances = leer_distancias("Viajante/Datos/10_distancias.txt")
+distances = leer_distancias("Viajante/Datos/50_distancias.txt")
 
 distance_matrix = np.array(distances)
 

@@ -92,7 +92,7 @@ def crear_poblacion_optimizada(
         # Mientras el individuo no sea viable, generamos uno nuevo
         while aptitud(individuo, matriz_adyacencia) == float("inf"):
             individuo = np.random.shuffle(num_poblaciones)
-        
+
         if unicos:
             while any(np.array_equal(individuo, p) for p in poblacion[:i]):
                 individuo = np.random.shuffle(num_poblaciones)
@@ -511,8 +511,55 @@ def crossover_edge_recombination_optimizado(
     return np.array(lista_hijos)
 
 
+def crossover_pdf_optimizado(lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float) -> np.ndarray:
+    """Realiza el crossover según se explica en el PDF proporcionado por el profesor."""
+    hijos = []
+    num_padres = lista_padres.shape[0]
+    for i in range(0, num_padres, 2):
+        padre1 = lista_padres[i]
+        padre2 = lista_padres[(i + 1) % num_padres]  # Asegura un crossover circular entre el último y el primer padre
+        
+        if random.random() < probabilidad:
+            # Seleccionar dos puntos de cortes aleatorios
+            punto1, punto2 = sorted(random.sample(range(len(padre1)), 2))
+            
+            seccion_padre1 = padre1[punto1:punto2]
+            seccion_padre2 = padre2[punto1:punto2]
+            
+            resto_padre1 = np.setdiff1d(padre1, seccion_padre2)
+            resto_padre2 = np.setdiff1d(padre2, seccion_padre1)
+            
+            # Inicializo a los hijos con -1
+            hijo1 = np.full(padre1.shape, -1)
+            hijo2 = np.full(padre2.shape, -1)
+            
+            hijo1[punto1:punto2] = seccion_padre2
+            hijo2[punto1:punto2] = seccion_padre1
+            
+            resto1_idx = 0
+            resto2_idx = 0
+            for idx in range(len(padre1)):
+                if not (punto1 <= idx < punto2):
+                    hijo1[idx] = resto_padre1[resto1_idx]
+                    hijo2[idx] = resto_padre2[resto2_idx]
+                    resto1_idx += 1
+                    resto2_idx += 1
+                    
+            hijos.append(hijo1)
+            hijos.append(hijo2)
+        else:
+            # Si no hay crossover, solo copia los padres a la nueva generación
+            hijos.append(padre1)
+            hijos.append(padre2)
+        
+    return np.array(hijos)
+
+
 def ejecutar_ejemplo_viajante_optimizado(
-    dibujar: bool = False, verbose: bool = True, parada_en_media=False, parada_en_clones=False
+    dibujar: bool = False,
+    verbose: bool = True,
+    parada_en_media=False,
+    parada_en_clones=False,
 ):
     if verbose:
         print("Municipios leídos.")
@@ -527,9 +574,12 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     distancias_iteraciones = []
     distancias_medias = []
-    
+
     if verbose:
-        print("Cantidad de individuos distintos: ", len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])))
+        print(
+            "Cantidad de individuos distintos: ",
+            len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])),
+        )
 
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
@@ -542,7 +592,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_partially_mapped_optimizado(
+        hijos = crossover_pdf_optimizado(
             seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
         )
 
@@ -572,7 +622,14 @@ def ejecutar_ejemplo_viajante_optimizado(
                 )
             )
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
-            print("Cantidad de individuos distintos: ", len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])))
+            print(
+                "Cantidad de individuos distintos: ",
+                len(
+                    set(
+                        [aptitud_viajante(individuo, MATRIZ) for individuo in poblacion]
+                    )
+                ),
+            )
 
         if (
             parada_en_media
@@ -580,9 +637,16 @@ def ejecutar_ejemplo_viajante_optimizado(
             and distancias_medias[-1] == distancias_medias[-10]
         ):
             break
-        
+
         if parada_en_clones:
-            if len(set([aptitud_viajante(individuo, MATRIZ) for individuo in poblacion])) == 1:
+            if (
+                len(
+                    set(
+                        [aptitud_viajante(individuo, MATRIZ) for individuo in poblacion]
+                    )
+                )
+                == 1
+            ):
                 break
 
     # Ordena la población según la aptitud
@@ -615,7 +679,7 @@ PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 20
-RUTA_MATRIZ = "Viajante/Datos/10_distancias.txt"
+RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
 MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 
@@ -624,8 +688,8 @@ if __name__ == "__main__":
     distancias_medias = []
     mejores_individuos = []
 
-    for i in range(1):
-        apt, med, ind = ejecutar_ejemplo_viajante_optimizado(True, True, True, True)
+    for i in range(10):
+        apt, med, ind = ejecutar_ejemplo_viajante_optimizado(False, True, True, True)
         mejores_aptitudes.append(apt)
         distancias_medias.append(med)
         mejores_individuos.append(ind)

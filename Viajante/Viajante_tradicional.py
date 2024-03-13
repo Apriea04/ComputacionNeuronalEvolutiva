@@ -151,6 +151,44 @@ def crossover_partially_mapped(
 
     return hijos
 
+def crossover_pdf(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float) -> list:
+    """Realiza el crossover según se explica en el PDF proporcionado por el profesor."""
+    hijos = []
+    num_padres = len(lista_padres)
+    for i in range(0, num_padres, 2):
+        padre1 = lista_padres[i]
+        padre2 = lista_padres[(i + 1) % num_padres]  # Asegura un crossover circular entre el último y el primer padre
+        
+        if random.random() < probabilidad:
+            # Seleccionar dos puntos de cortes aleatorios
+            punto1, punto2 = sorted(random.sample(range(len(padre1)), 2))
+            
+            sección_padre1 = padre1[punto1:punto2]
+            sección_padre2 = padre2[punto1:punto2]
+            
+            resto_padre1 = [gen for gen in padre1 if gen not in sección_padre2]
+            resto_padre2 = [gen for gen in padre2 if gen not in sección_padre1]
+            
+            #Inicializo al hijo con -1
+            hijo1 = [-1]*len(padre1)
+            hijo2 = [-1]*len(padre2)
+            
+            for i in range(len(padre1)):
+                if (i >= punto1 and i < punto2):
+                    hijo1[i] = sección_padre2[i - punto1]
+                    hijo2[i] = sección_padre1[i - punto1]
+                else:
+                    hijo1[i] = resto_padre1.pop(0)
+                    hijo2[i] = resto_padre2.pop(0)
+                    
+            hijos.append(hijo1)
+            hijos.append(hijo2)
+        else:
+            # Si no hay crossover, solo copia los padres a la nueva generación
+            hijos.append(padre1)
+            hijos.append(padre2)
+        
+    return hijos
 
 def crossover_order(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float) -> list:
     """Realiza el order crossover."""
@@ -460,7 +498,7 @@ def ejecutar_ejemplo_viajante(
         )
 
         # Cruzamos los seleccionados
-        hijos = crossover_partially_mapped(
+        hijos = crossover_pdf(
             seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
         )
 
@@ -529,7 +567,7 @@ PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 100
-RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
+RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
 MATRIZ = leer_distancias(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 

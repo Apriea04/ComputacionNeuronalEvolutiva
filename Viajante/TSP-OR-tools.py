@@ -9,9 +9,8 @@ from Viajante_tradicional import leer_distancias
 
 def create_data_model():
     """Stores the data for the problem."""
-    RUTA_MATRIZ = "Viajante/Datos/matriz10.data"
-    RUTA_PUEBLOS = "Viajante/Datos/pueblos10.txt"
-    PUEBLOS, MATRIZ = leer_distancias(RUTA_MATRIZ, RUTA_PUEBLOS)
+    RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
+    MATRIZ = leer_distancias(RUTA_MATRIZ)
     data = {}
     data["num_vehicles"] = 1
     data["depot"] = 0
