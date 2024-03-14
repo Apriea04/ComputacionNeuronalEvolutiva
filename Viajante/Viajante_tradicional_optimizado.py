@@ -109,7 +109,23 @@ def crear_poblacion_optimizada(
     return poblacion
 
 
-def mutar_optimizada(individuo: np.ndarray) -> np.ndarray:
+def mutar_mejorada_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
+    """Muta un individuo utilizando NumPy para optimizar la mutación.
+    Puede que el camino resultante no sea válido."""
+
+    # Copiamos el individuo
+    mutado = individuo.copy()
+
+    # Elegimos una posición aleatoria para empezar la mutación
+    inicio = np.random.randint(len(mutado) - max_genes)
+
+    # Intercambiamos los valores en posiciones consecutivas
+    mutado[inicio], mutado[inicio + 1] = mutado[inicio + 1], mutado[inicio]
+
+    return mutado
+
+
+def mutar_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
     """
     Muta un individuo utilizando NumPy para optimizar la mutación.
     Puede que el camino resultante no sea válido.
@@ -121,13 +137,13 @@ def mutar_optimizada(individuo: np.ndarray) -> np.ndarray:
     mutado = individuo.copy()
 
     # Elegimos dos posiciones aleatorias
-    posiciones = np.random.choice(len(mutado), size=2, replace=False)
+    posiciones = np.random.choice(len(mutado), size=max_genes, replace=False)
 
     # Intercambiamos los valores de las posiciones
-    mutado[posiciones[0]], mutado[posiciones[1]] = (
-        mutado[posiciones[1]],
-        mutado[posiciones[0]],
-    )
+    for i in range(max_genes):
+        mutado[posiciones[i]] = np.random.choice(
+            np.setdiff1d(mutado, mutado[posiciones[i]])
+        )
 
     return mutado
 
@@ -312,6 +328,24 @@ def crossover_cycle_optimizado(
             lista_hijos[i + 1] = hijo_2
 
     return lista_hijos
+
+
+def elitismo_n_padres_optimizado(
+    num_padres: int,
+    padres: np.ndarray,
+    hijos: np.ndarray,
+    num_elitismo: int,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+) -> np.ndarray:
+    """De entre padres e hijos selecciona los num_padres mejores padres y los num_elitismo-num_padres mejores hijos."""
+
+    indices_padres = np.argsort([aptitud(padre, matriz_adyacencia) for padre in padres])
+    indices_hijos = np.argsort([aptitud(hijo, matriz_adyacencia) for hijo in hijos])
+
+    padres_elite = padres[indices_padres][:num_padres]
+    hijos_elite = hijos[indices_hijos][: num_elitismo - num_padres]
+    return np.concatenate((padres_elite, hijos_elite))
 
 
 def elitismo_optimizado(
@@ -511,31 +545,38 @@ def crossover_edge_recombination_optimizado(
     return np.array(lista_hijos)
 
 
-def crossover_pdf_optimizado(lista_padres: np.ndarray, aptitud: Callable, matriz_adyacencia: np.ndarray, probabilidad: float) -> np.ndarray:
+def crossover_pdf_optimizado(
+    lista_padres: np.ndarray,
+    aptitud: Callable,
+    matriz_adyacencia: np.ndarray,
+    probabilidad: float,
+) -> np.ndarray:
     """Realiza el crossover según se explica en el PDF proporcionado por el profesor."""
     hijos = []
     num_padres = lista_padres.shape[0]
     for i in range(0, num_padres, 2):
         padre1 = lista_padres[i]
-        padre2 = lista_padres[(i + 1) % num_padres]  # Asegura un crossover circular entre el último y el primer padre
-        
+        padre2 = lista_padres[
+            (i + 1) % num_padres
+        ]  # Asegura un crossover circular entre el último y el primer padre
+
         if random.random() < probabilidad:
             # Seleccionar dos puntos de cortes aleatorios
             punto1, punto2 = sorted(random.sample(range(len(padre1)), 2))
-            
+
             seccion_padre1 = padre1[punto1:punto2]
             seccion_padre2 = padre2[punto1:punto2]
-            
+
             resto_padre1 = np.setdiff1d(padre1, seccion_padre2)
             resto_padre2 = np.setdiff1d(padre2, seccion_padre1)
-            
+
             # Inicializo a los hijos con -1
             hijo1 = np.full(padre1.shape, -1)
             hijo2 = np.full(padre2.shape, -1)
-            
+
             hijo1[punto1:punto2] = seccion_padre2
             hijo2[punto1:punto2] = seccion_padre1
-            
+
             resto1_idx = 0
             resto2_idx = 0
             for idx in range(len(padre1)):
@@ -544,14 +585,14 @@ def crossover_pdf_optimizado(lista_padres: np.ndarray, aptitud: Callable, matriz
                     hijo2[idx] = resto_padre2[resto2_idx]
                     resto1_idx += 1
                     resto2_idx += 1
-                    
+
             hijos.append(hijo1)
             hijos.append(hijo2)
         else:
             # Si no hay crossover, solo copia los padres a la nueva generación
             hijos.append(padre1)
             hijos.append(padre2)
-        
+
     return np.array(hijos)
 
 

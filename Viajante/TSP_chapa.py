@@ -1,3 +1,4 @@
+import threading
 from Viajante_tradicional_optimizado import (
     leer_distancias_optimizada,
     crear_poblacion_optimizada,
@@ -10,10 +11,13 @@ from Viajante_tradicional_optimizado import (
     crossover_pdf_optimizado,
     mutar_optimizada,
     elitismo_optimizado,
+    mutar_mejorada_optimizada,
+    elitismo_n_padres_optimizado,
 )
 from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
 import numpy as np
+import multiprocessing
 
 
 def dibujar_individuo(
@@ -51,20 +55,19 @@ def ejecutar_ejemplo_viajante_optimizado(
     plot_resultados_parciales: bool = True,
     cambio_de_mutacion: bool = False,
 ):
-    
     # ----------------------------------------------------------------------
     # Parámetros
-    NUM_ITERACIONES = 10000
-    MAX_MEDIAS_IGUALES = 40
+    NUM_ITERACIONES = 1000
+    MAX_MEDIAS_IGUALES = 10
     PROB_MUTACION = 0.16
-    PROB_CRUZAMIENTO = 0.8
+    PROB_CRUZAMIENTO = 0.6
     PARTICIPANTES_TORNEO = 2
-    NUM_INDIVIDUOS = 250
-    RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
+    NUM_INDIVIDUOS = 300
+    GENES_MUTAR = 6
+    RUTA_COORDENADAS = "Viajante/Datos/100_coordenadas.txt"
     COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
     # ----------------------------------------------------------------------
 
-    
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion_optimizada(
@@ -96,7 +99,7 @@ def ejecutar_ejemplo_viajante_optimizado(
             PARTICIPANTES_TORNEO,
             aptitud_viajante,
             MATRIZ,
-            NUM_INDIVIDUOS * 2,
+            NUM_INDIVIDUOS,  # TODO: esto depende del crossover
         )
 
         # Cruzamos los seleccionados
@@ -107,13 +110,26 @@ def ejecutar_ejemplo_viajante_optimizado(
         # Mutamos los hijos
         for hijo in hijos:
             if np.random.rand() < PROB_MUTACION:
-                hijo = mutar_optimizada(hijo)
+                hijo = mutar_optimizada(hijo, GENES_MUTAR)
 
         # Elitismo
         if elitismo:
-            poblacion = elitismo_optimizado(
-                np.concatenate((poblacion, hijos)), len(MATRIZ[0]), aptitud_viajante, MATRIZ
+            poblacion = elitismo_n_padres_optimizado(
+                1,
+                poblacion,
+                hijos,
+                NUM_INDIVIDUOS,
+                aptitud_viajante,
+                MATRIZ,
             )
+            if False and elitismo:
+                poblacion = elitismo_optimizado(
+                    np.concatenate((poblacion, hijos)),
+                    NUM_INDIVIDUOS,
+                    aptitud_viajante,
+                    MATRIZ,
+                )
+
         else:
             poblacion = hijos
 
@@ -139,15 +155,33 @@ def ejecutar_ejemplo_viajante_optimizado(
             )
             print("Distancia media: {dist}".format(dist=distancias_medias[-1]))
 
+        if parada_en_media and i > MAX_MEDIAS_IGUALES:
+            valor_media = distancias_medias[-1]
+            salir = True
+            for k in range(1, MAX_MEDIAS_IGUALES):
+                if distancias_medias[-k] != valor_media:
+                    salir = False
+                    break
+            if salir:
+                break
+
         if (
-            parada_en_media
-            and i > MAX_MEDIAS_IGUALES
-            and distancias_medias[-1] == distancias_medias[-10]
+            cambio_de_mutacion
+            and i > MAX_MEDIAS_IGUALES // 2
+            and distancias_medias[-1] == distancias_medias[-MAX_MEDIAS_IGUALES // 2]
         ):
-            break
-        
-        if cambio_de_mutacion and i>MAX_MEDIAS_IGUALES//2:
-            PROB_MUTACION = 1
+            valor_media = distancias_medias[-1]
+            cambiar_mutacion = True
+            for k in range(1, MAX_MEDIAS_IGUALES // 2):
+                if distancias_medias[-k] != valor_media:
+                    cambiar_mutacion = False
+                    break
+            if cambiar_mutacion:
+                print(
+                    "#################################  Cambio de mutación  #################################"
+                )
+                PROB_MUTACION = 0.5
+                GENES_MUTAR = 2
 
         if parada_en_clones:
             if (
@@ -199,7 +233,7 @@ def dibujar_coordenadas(path: str, cuadricula: bool = True) -> plt:
     return plt
 
 
-if __name__ == "__main__":
+def run():
     ejecutar_ejemplo_viajante_optimizado(
         dibujar_evolucion=True,
         verbose=True,
@@ -207,5 +241,20 @@ if __name__ == "__main__":
         plot_resultados_parciales=plt,
         parada_en_clones=False,
         elitismo=True,
-        cambio_de_mutacion=True,
+        cambio_de_mutacion=False,
     )
+
+if __name__ == "__main__":
+
+    num_processes = 4
+    processes = []
+
+    for i in range(num_processes):
+        process = multiprocessing.Process(target=run)
+        process.start()
+        processes.append(process)
+
+    for process in processes:
+        process.join()
+
+    print("All processes have finished")
