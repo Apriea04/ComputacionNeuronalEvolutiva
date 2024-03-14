@@ -13,6 +13,7 @@ from Viajante_tradicional_optimizado import (
     elitismo_optimizado,
     mutar_mejorada_optimizada,
     elitismo_n_padres_optimizado,
+    mutar_desordenado_optimizada,
 )
 from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
@@ -57,14 +58,14 @@ def ejecutar_ejemplo_viajante_optimizado(
 ):
     # ----------------------------------------------------------------------
     # Parámetros
-    NUM_ITERACIONES = 1000
+    NUM_ITERACIONES = 500
     MAX_MEDIAS_IGUALES = 10
-    PROB_MUTACION = 0.16
-    PROB_CRUZAMIENTO = 0.6
+    PROB_MUTACION = 0.1 #Visto
+    PROB_CRUZAMIENTO = 0.4
     PARTICIPANTES_TORNEO = 2
-    NUM_INDIVIDUOS = 300
-    GENES_MUTAR = 6
-    RUTA_COORDENADAS = "Viajante/Datos/100_coordenadas.txt"
+    NUM_INDIVIDUOS = 100
+    GENES_MUTAR = 2
+    RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
     COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
     # ----------------------------------------------------------------------
 
@@ -110,7 +111,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         # Mutamos los hijos
         for hijo in hijos:
             if np.random.rand() < PROB_MUTACION:
-                hijo = mutar_optimizada(hijo, GENES_MUTAR)
+                hijo = mutar_desordenado_optimizada(hijo)
 
         # Elitismo
         if elitismo:
@@ -235,7 +236,7 @@ def dibujar_coordenadas(path: str, cuadricula: bool = True) -> plt:
 
 def run():
     ejecutar_ejemplo_viajante_optimizado(
-        dibujar_evolucion=True,
+        dibujar_evolucion=False,
         verbose=True,
         parada_en_media=True,
         plot_resultados_parciales=plt,
@@ -244,9 +245,9 @@ def run():
         cambio_de_mutacion=False,
     )
 
-if __name__ == "__main__":
 
-    num_processes = 4
+if __name__ == "__main__":
+    num_processes = 10
     processes = []
 
     for i in range(num_processes):
