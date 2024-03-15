@@ -17,4 +17,6 @@ a)
 
     parada_en_media: True, pero inútil
 
+    Con 50 puntos los mejores resultados llegaban a 1300 +-
+    Distancia: euclídea
 

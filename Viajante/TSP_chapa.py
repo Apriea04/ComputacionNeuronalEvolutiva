@@ -1,4 +1,7 @@
 import threading
+
+from matplotlib.collections import LineCollection
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 from Viajante_tradicional_optimizado import (
     leer_distancias_optimizada,
     crear_poblacion_optimizada,
@@ -27,17 +30,41 @@ def dibujar_individuo(
     coordenadas: np.ndarray,
     graph_anterior=None,
     sleep_time=0.001,
+    distancia: str = "euclidea",
 ):
     """Dibuja la ruta del mejor individuo y borra la ruta anterior."""
     ruta_x = [coordenadas[i][0] for i in individuo]
     ruta_y = [coordenadas[i][1] for i in individuo]
-    graph = plt.plot(
-        ruta_x + [ruta_x[0]],
-        ruta_y + [ruta_y[0]],
-        marker="o",
-        linestyle="-",
-        color="blue",
-    )[0]
+    ruta_x.append(coordenadas[individuo[0]][0])
+    ruta_y.append(coordenadas[individuo[0]][1])
+    ruta = np.column_stack((ruta_x, ruta_y))
+
+    match distancia:
+        case "euclidea":
+            segments = np.array([ruta[:-1], ruta[1:]]).transpose((1, 0, 2))
+        case "manhattan":
+            segments = np.array([ruta[:-1], ruta[1:]]).transpose((1, 0, 2))
+            segments = np.column_stack(
+                (segments[:, :, 0], segments[:, :, 1] + segments[:, :, 0])
+            )
+
+        case "chebyshev":
+            segments = np.array([ruta[:-1], ruta[1:]]).transpose((1, 0, 2))
+            segments = np.column_stack(
+                (segments[:, :, 0], segments[:, :, 1] + segments[:, :, 0])
+            )
+            segments = np.column_stack(
+                (segments[:, :, 0], segments[:, :, 1] + segments[:, :, 0])
+            )
+
+    # Crear un gradiente de color para las líneas
+    num_lines = len(individuo) - 1
+    color_array = np.linspace(0, 1, num_lines)
+    colors = plt.cm.get_cmap("brg")(color_array)
+
+    # Crear una colección de líneas con gradiente de color
+    lc = LineCollection(segments, colors=colors, linewidth=2)
+    plt.gca().add_collection(lc)
 
     # Borra la ruta anterior si se proporciona
     if graph_anterior is not None:
@@ -45,7 +72,7 @@ def dibujar_individuo(
 
     plt.pause(sleep_time)  # Pausa para que se vea el cambio
 
-    return graph
+    return lc
 
 
 def ejecutar_ejemplo_viajante_optimizado(
@@ -59,7 +86,9 @@ def ejecutar_ejemplo_viajante_optimizado(
 ):
     # ----------------------------------------------------------------------
     # Parámetros
-    NUM_ITERACIONES = 500  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+    NUM_ITERACIONES = (
+        500  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+    )
     MAX_MEDIAS_IGUALES = 10
     PROB_MUTACION = 0.1  # Visto 0.1
     PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
@@ -88,7 +117,6 @@ def ejecutar_ejemplo_viajante_optimizado(
         plt.axhline(0, color="salmon")
         plt.title("Mejor Individuo")
         plt.scatter(*zip(*COORDENADAS))
-
         grafico_nuevo = plt.plot(poblacion[0])[0]
 
     distancias_iteraciones = []
@@ -228,18 +256,6 @@ def ejecutar_ejemplo_viajante_optimizado(
     return distancias_iteraciones, distancias_medias, poblacion[0]
 
 
-def dibujar_coordenadas(path: str, cuadricula: bool = True) -> plt:
-    """Lee un fichero con coordenadas y las dibuja, retornando el objeto plt para poder seguir dibujando y actualizarlo"""
-    coordenadas = leer_coordenadas(path)[0]
-    plt.scatter(*zip(*coordenadas))
-    if cuadricula:
-        plt.grid(color="salmon")
-        plt.axvline(0, color="salmon")
-        plt.axhline(0, color="salmon")
-
-    return plt
-
-
 def run():
     ejecutar_ejemplo_viajante_optimizado(
         dibujar_evolucion=False,
@@ -253,7 +269,7 @@ def run():
 
 
 if __name__ == "__main__":
-    num_processes = 10
+    num_processes = 1
     processes = []
 
     for i in range(num_processes):
