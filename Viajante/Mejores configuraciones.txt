@@ -1,0 +1,20 @@
+a)  
+    # Parámetros
+    NUM_ITERACIONES = 500  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+    MAX_MEDIAS_IGUALES = 10
+    PROB_MUTACION = 0.1  # Visto 0.1
+    PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
+    PARTICIPANTES_TORNEO = 2
+    NUM_INDIVIDUOS = 100
+    GENES_MUTAR = 2
+    RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
+    COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
+
+    seleccion: torneo
+    crossover: order
+    mutacion: mutar_desordenado_optimizada
+    elitismo: 1 padre, resto hijos
+
+    parada_en_media: True, pero inútil
+
+

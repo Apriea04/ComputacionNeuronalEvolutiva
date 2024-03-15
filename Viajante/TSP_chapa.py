@@ -14,6 +14,7 @@ from Viajante_tradicional_optimizado import (
     mutar_mejorada_optimizada,
     elitismo_n_padres_optimizado,
     mutar_desordenado_optimizada,
+    seleccionar_ruleta_pesos_optimizado,
 )
 from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
@@ -58,10 +59,10 @@ def ejecutar_ejemplo_viajante_optimizado(
 ):
     # ----------------------------------------------------------------------
     # Parámetros
-    NUM_ITERACIONES = 500
+    NUM_ITERACIONES = 500  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
     MAX_MEDIAS_IGUALES = 10
-    PROB_MUTACION = 0.1 #Visto
-    PROB_CRUZAMIENTO = 0.4
+    PROB_MUTACION = 0.1  # Visto 0.1
+    PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
     PARTICIPANTES_TORNEO = 2
     NUM_INDIVIDUOS = 100
     GENES_MUTAR = 2
@@ -95,6 +96,7 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
+
         seleccionados = seleccionar_torneo_optimizado(
             poblacion,
             PARTICIPANTES_TORNEO,
@@ -103,6 +105,10 @@ def ejecutar_ejemplo_viajante_optimizado(
             NUM_INDIVIDUOS,  # TODO: esto depende del crossover
         )
 
+        """
+        # Seleccionamos los individuos por ruleta
+        seleccionados = seleccionar_ruleta_pesos_optimizado(poblacion, aptitud_viajante, MATRIZ, NUM_INDIVIDUOS)
+        """
         # Cruzamos los seleccionados
         hijos = crossover_order_optimizado(
             seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
@@ -116,7 +122,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         # Elitismo
         if elitismo:
             poblacion = elitismo_n_padres_optimizado(
-                1,
+                3,
                 poblacion,
                 hijos,
                 NUM_INDIVIDUOS,
