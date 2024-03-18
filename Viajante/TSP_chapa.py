@@ -1,4 +1,4 @@
-import threading
+from multiprocessing import Pool
 
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap, Normalize
@@ -256,8 +256,8 @@ def ejecutar_ejemplo_viajante_optimizado(
     return distancias_iteraciones, distancias_medias, poblacion[0]
 
 
-def run():
-    ejecutar_ejemplo_viajante_optimizado(
+def run(a):
+    return ejecutar_ejemplo_viajante_optimizado(
         dibujar_evolucion=False,
         verbose=True,
         parada_en_media=True,
@@ -269,15 +269,18 @@ def run():
 
 
 if __name__ == "__main__":
-    num_processes = 1
-    processes = []
-
-    for i in range(num_processes):
-        process = multiprocessing.Process(target=run)
-        process.start()
-        processes.append(process)
-
-    for process in processes:
-        process.join()
-
-    print("All processes have finished")
+    num_processes = 12
+    
+    with Pool(num_processes) as pool:
+        results = pool.map(run, range(num_processes))
+    
+    best_distance = float('inf')
+    best_individual = None
+    
+    for distances, _, individual in results:
+        if distances[-1] < best_distance:
+            best_distance = distances[-1]
+            best_individual = individual
+    
+    print("Best distance:", best_distance)
+    print("Best individual:", best_individual)
