@@ -61,7 +61,7 @@ def dibujar_individuo(
     # Crear un gradiente de color para las líneas
     num_lines = len(individuo) - 1
     color_array = np.linspace(0, 1, num_lines)
-    colors = plt.cm.get_cmap("brg")(color_array)
+    colors = plt.colormaps['brg'](color_array)
 
     # Crear una colección de líneas con gradiente de color
     lc = LineCollection(segments, colors=colors, linewidth=2)
@@ -89,7 +89,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     # ----------------------------------------------------------------------
     # Parámetros
     NUM_ITERACIONES = (
-        5000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+        10000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
     )
     MAX_MEDIAS_IGUALES = 10
     PROB_MUTACION = 0.13  # Visto 0.1

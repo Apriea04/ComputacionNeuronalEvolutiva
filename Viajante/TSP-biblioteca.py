@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from Datos.datos import leer_coordenadas
 from Viajante_tradicional_optimizado import leer_distancias_optimizada, aptitud_viajante
 from TSP_chapa import dibujar_individuo
-
+import concurrent.futures
  # ----------------------------------------------------------------------
 # Parámetros
 NUM_ITERACIONES = (
@@ -50,12 +50,31 @@ def main():
 
     return pop, stats, hof, log
 
-if __name__ == "__main__":
+def evaluate_solution(best_solution, best_distance):
     pop, stats, hof, log = main()
+
+    if hof[0].fitness.values[0] < best_distance:
+        return hof[0], hof[0].fitness.values[0]
+    else:
+        return best_solution, best_distance
+
+if __name__ == "__main__":
+    best_solution = None
+    best_distance = float('inf')
     
-    # Imprimimos la menor distancia encontrada
-    print("Mejor individuo: ", hof[0])
-    print("Mejor distancia: ", hof[0].fitness.values[0])
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        
+        for _ in range(12):
+            future = executor.submit(evaluate_solution, best_solution, best_distance)
+            futures.append(future)
+        
+        for future in concurrent.futures.as_completed(futures):
+            best_solution, best_distance = future.result()
+    
+    # Imprimimos la mejor solución encontrada
+    print("Mejor individuo: ", best_solution)
+    print("Mejor distancia: ", best_distance)
     
     plt.ioff()
     plt.ion()  # turn on interactive mode
@@ -64,5 +83,4 @@ if __name__ == "__main__":
     plt.axhline(0, color="salmon")
     plt.title("Mejor Individuo")
     plt.scatter(*zip(*COORDENADAS))
-    dibujar_individuo(hof[0], COORDENADAS, distancia="euclidea", sleep_time=6000)
-    
+    dibujar_individuo(best_solution, COORDENADAS, distancia="euclidea", sleep_time=6000)
