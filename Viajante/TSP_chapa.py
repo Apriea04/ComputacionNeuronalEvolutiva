@@ -87,7 +87,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     # ----------------------------------------------------------------------
     # Parámetros
     NUM_ITERACIONES = (
-        500  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+        5000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
     )
     MAX_MEDIAS_IGUALES = 10
     PROB_MUTACION = 0.1  # Visto 0.1
@@ -259,9 +259,9 @@ def ejecutar_ejemplo_viajante_optimizado(
 def run(a):
     return ejecutar_ejemplo_viajante_optimizado(
         dibujar_evolucion=False,
-        verbose=True,
+        verbose=False,
         parada_en_media=True,
-        plot_resultados_parciales=plt,
+        plot_resultados_parciales=None,
         parada_en_clones=False,
         elitismo=True,
         cambio_de_mutacion=False,
@@ -270,17 +270,20 @@ def run(a):
 
 if __name__ == "__main__":
     num_processes = 12
-    
+
     with Pool(num_processes) as pool:
         results = pool.map(run, range(num_processes))
-    
-    best_distance = float('inf')
+
+    best_distance = float("inf")
     best_individual = None
-    
-    for distances, _, individual in results:
+
+    for distances, media, individual in results:
+        # Imprimimos los resultados:
+        print(f"Iteraciones: {len(distances)}\tDistancias: {distances[-1]}\tMedia: {media[-1]}")
         if distances[-1] < best_distance:
             best_distance = distances[-1]
             best_individual = individual
     
-    print("Best distance:", best_distance)
-    print("Best individual:", best_individual)
+    print("\n\n\n\n")
+    print("Mejor distance:", best_distance)
+    print("Mejor individuo:", best_individual)
