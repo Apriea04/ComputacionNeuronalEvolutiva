@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
 
+RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
 
 def dibujar_individuo(
     individuo: np.ndarray,
@@ -84,21 +85,20 @@ def ejecutar_ejemplo_viajante_optimizado(
     plot_resultados_parciales: bool = True,
     cambio_de_mutacion: bool = False,
 ):
+    global COORDENADAS
     # ----------------------------------------------------------------------
     # Parámetros
     NUM_ITERACIONES = (
         5000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
     )
     MAX_MEDIAS_IGUALES = 10
-    PROB_MUTACION = 0.1  # Visto 0.1
+    PROB_MUTACION = 0.13  # Visto 0.1
     PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
     PARTICIPANTES_TORNEO = 2
     NUM_INDIVIDUOS = 100
-    GENES_MUTAR = 2
-    RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
     COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
     # ----------------------------------------------------------------------
-
+    
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion_optimizada(
@@ -270,6 +270,8 @@ def run(a):
 
 if __name__ == "__main__":
     num_processes = 12
+    
+    COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
 
     with Pool(num_processes) as pool:
         results = pool.map(run, range(num_processes))
@@ -279,11 +281,22 @@ if __name__ == "__main__":
 
     for distances, media, individual in results:
         # Imprimimos los resultados:
-        print(f"Iteraciones: {len(distances)}\tDistancias: {distances[-1]}\tMedia: {media[-1]}")
+        print(
+            f"Iteraciones: {len(distances)}\tDistancias: {distances[-1]}\tMedia: {media[-1]}"
+        )
         if distances[-1] < best_distance:
             best_distance = distances[-1]
             best_individual = individual
-    
+
     print("\n\n\n\n")
     print("Mejor distance:", best_distance)
     print("Mejor individuo:", best_individual)
+
+    plt.ioff()
+    plt.ion()  # turn on interactive mode
+    plt.grid(color="salmon")
+    plt.axvline(0, color="salmon")
+    plt.axhline(0, color="salmon")
+    plt.title("Mejor Individuo")
+    plt.scatter(*zip(*COORDENADAS))
+    dibujar_individuo(best_individual, COORDENADAS, distancia="euclidea", sleep_time=6000)

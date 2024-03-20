@@ -6,8 +6,19 @@ from Datos.datos import leer_coordenadas
 from Viajante_tradicional_optimizado import leer_distancias_optimizada, aptitud_viajante
 from TSP_chapa import dibujar_individuo
 
+ # ----------------------------------------------------------------------
+# Parámetros
+NUM_ITERACIONES = (
+    10000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+)
+PROB_MUTACION = 0.13  # Visto 0.13
+PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
+PARTICIPANTES_TORNEO = 3
+NUM_INDIVIDUOS = 50
 RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
 COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
+# ----------------------------------------------------------------------
+
 
 # Adaptar la función de aptitud para que reciba un individuo y devuelva su aptitud
 def fitness (individuo):
@@ -17,13 +28,13 @@ creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
-toolbox.register("indices", random.sample, range(50), 50)
+toolbox.register("indices", random.sample, range(len(COORDENADAS)), len(COORDENADAS))
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual, n=NUM_INDIVIDUOS)
 
 toolbox.register("mate", tools.cxOrdered)
 toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
-toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("select", tools.selTournament, tournsize=PARTICIPANTES_TORNEO)
 toolbox.register("evaluate", fitness)
 
 def main():
@@ -35,7 +46,7 @@ def main():
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.35, mutpb=0.13, ngen=5000, stats=stats, halloffame=hof, verbose=True)
+    pop, log = algorithms.eaSimple(pop, toolbox, cxpb=PROB_CRUZAMIENTO, mutpb=PROB_MUTACION, ngen=NUM_ITERACIONES, stats=stats, halloffame=hof, verbose=True)
 
     return pop, stats, hof, log
 
@@ -53,5 +64,5 @@ if __name__ == "__main__":
     plt.axhline(0, color="salmon")
     plt.title("Mejor Individuo")
     plt.scatter(*zip(*COORDENADAS))
-    dibujar_individuo(hof[0], COORDENADAS, distancia="euclidea", sleep_time=20)
+    dibujar_individuo(hof[0], COORDENADAS, distancia="euclidea", sleep_time=6000)
     
