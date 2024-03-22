@@ -126,7 +126,9 @@ def mutar_mejorada_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.n
 
 
 def mutar_desordenado_optimizada(individuo: np.ndarray) -> np.ndarray:
-    """Muta un individuo utilizando NumPy para optimizar la mutación.
+    """
+    Shuffle a una zona del individuo
+    Muta un individuo utilizando NumPy para optimizar la mutación.
     Puede que el camino resultante no sea válido."""
 
     # Copiamos el individuo
@@ -144,6 +146,7 @@ def mutar_desordenado_optimizada(individuo: np.ndarray) -> np.ndarray:
 
 def mutar_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
     """
+    Intercambiar índices de un individuo de manera aleatoria.
     Muta un individuo utilizando NumPy para optimizar la mutación.
     Puede que el camino resultante no sea válido.
 

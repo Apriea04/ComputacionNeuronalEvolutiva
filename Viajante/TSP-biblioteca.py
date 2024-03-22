@@ -8,6 +8,7 @@ from TSP_chapa import dibujar_individuo
 import concurrent.futures
  # ----------------------------------------------------------------------
 # Parámetros
+NUM_EJECUCIONES = 4
 NUM_ITERACIONES = (
     10000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
 )
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
         
-        for _ in range(12):
+        for _ in range(NUM_EJECUCIONES):
             future = executor.submit(evaluate_solution, best_solution, best_distance)
             futures.append(future)
         
