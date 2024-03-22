@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
-from enum import Enum
-import Viajante_tradicional_optimizado as TSP
-from Viajante.enums import Seleccion, Mutacion, Crossover
+from enums import Seleccion, Mutacion, Crossover, Elitismo
+
 
 class GeneticAlgorithmUI(tk.Tk):
     def __init__(self):
@@ -16,16 +15,28 @@ class GeneticAlgorithmUI(tk.Tk):
         self.prob_crossover = tk.StringVar(value="0.35")
         self.num_individuos = tk.StringVar(value="100")
         self.elitismo_var = tk.BooleanVar(value=True)
-        self.elitismo_tipo = tk.StringVar(value="Padres vs hijos")
+        self.elitismo_tipo = tk.StringVar(
+            value=Elitismo.PASAR_N_PADRES.name.lower().capitalize().replace("_", " ")
+        )
         self.num_padres_pasados = tk.StringVar(value="1")
-        self.seleccion_tipo = tk.StringVar(value="Ruleta con pesos")
+        self.num_padres_pasados_activo = True
+        self.seleccion_tipo = tk.StringVar(
+            value=Seleccion.TORNEO.name.lower().capitalize().replace("_", " ")
+        )
         self.num_participantes = tk.StringVar(value="2")
         self.usar_biblioteca = tk.BooleanVar(value=False)
-        self.mutacion_tipo = tk.StringVar(value="Permutar zona")
-        self.crossover_tipo = tk.StringVar(value="Crossover order")
+        self.mutacion_tipo = tk.StringVar(
+            value=Mutacion.PERMUTAR_ZONA.name.lower().capitalize().replace("_", " ")
+        )
+        self.crossover_tipo = tk.StringVar(
+            value=Crossover.CROSSOVER_ORDER.name.lower().capitalize().replace("_", " ")
+        )
 
         # Crear elementos de la interfaz
         self.create_widgets()
+
+    def _enums_to_string(self, enum):
+        return enum.name.lower().capitalize().replace("_", " ")
 
     def create_widgets(self):
         # Frame para agrupar la configuración principal
@@ -33,13 +44,21 @@ class GeneticAlgorithmUI(tk.Tk):
         main_frame.grid(row=0, column=0, padx=10, pady=10)
 
         # Configuración principal
-        config_label = tk.Label(main_frame, text="Configuración principal", font=("Helvetica", 12, "bold"))
+        config_label = tk.Label(
+            main_frame, text="Configuración principal", font=("Helvetica", 12, "bold")
+        )
         config_label.grid(row=0, column=0, columnspan=2, pady=5)
 
         # Numero de ejecuciones
         ejecuciones_label = tk.Label(main_frame, text="Numero de ejecuciones:")
         ejecuciones_label.grid(row=1, column=0, sticky="w")
-        ejecuciones_slider = tk.Scale(main_frame, from_=1, to=16, variable=self.num_ejecuciones, orient="horizontal")
+        ejecuciones_slider = tk.Scale(
+            main_frame,
+            from_=1,
+            to=16,
+            variable=self.num_ejecuciones,
+            orient="horizontal",
+        )
         ejecuciones_slider.grid(row=1, column=1, sticky="we")
 
         # Numero de iteraciones
@@ -71,21 +90,37 @@ class GeneticAlgorithmUI(tk.Tk):
         extra_frame.grid(row=0, column=1, padx=10, pady=10)
 
         # Configuración adicional
-        extra_label = tk.Label(extra_frame, text="Configuración adicional", font=("Helvetica", 12, "bold"))
+        extra_label = tk.Label(
+            extra_frame, text="Configuración adicional", font=("Helvetica", 12, "bold")
+        )
         extra_label.grid(row=0, column=0, columnspan=2, pady=5)
 
         # File picker
-        file_button = tk.Button(extra_frame, text="Seleccionar fichero", command=self.pick_file)
+        file_button = tk.Button(
+            extra_frame, text="Seleccionar fichero", command=self.pick_file
+        )
         file_button.grid(row=1, column=0, columnspan=2, pady=5)
 
         # Elitismo
-        elitismo_check = tk.Checkbutton(extra_frame, text="Elitismo", variable=self.elitismo_var, command=self.toggle_elitismo)
+        elitismo_check = tk.Checkbutton(
+            extra_frame,
+            text="Elitismo",
+            variable=self.elitismo_var,
+            command=self.toggle_elitismo,
+        )
         elitismo_check.grid(row=2, column=0, columnspan=2, sticky="w")
         self.elitismo_widgets = []
-        self.elitismo_dropdown = tk.OptionMenu(extra_frame, self.elitismo_tipo, "Padres vs hijos", "Pasar n padres")
+        self.elitismo_dropdown = tk.OptionMenu(
+            extra_frame,
+            self.elitismo_tipo,
+            *map(self._enums_to_string, Elitismo),
+            command=self.seleccion_elitismo,
+        )
         self.elitismo_widgets.append(self.elitismo_dropdown)
         self.elitismo_dropdown.grid(row=3, column=0, sticky="we")
-        self.num_padres_entry = tk.Entry(extra_frame, textvariable=self.num_padres_pasados)
+        self.num_padres_entry = tk.Entry(
+            extra_frame, textvariable=self.num_padres_pasados
+        )
         self.elitismo_widgets.append(self.num_padres_entry)
         self.num_padres_entry.grid(row=3, column=1, sticky="we")
         self.toggle_elitismo()
@@ -93,23 +128,34 @@ class GeneticAlgorithmUI(tk.Tk):
         # Selección
         seleccion_label = tk.Label(extra_frame, text="Selección:")
         seleccion_label.grid(row=4, column=0, sticky="w")
-        seleccion_dropdown = tk.OptionMenu(extra_frame, self.seleccion_tipo, *map(lambda x: x.name.title().replace("_", " "), Seleccion))
+        seleccion_dropdown = tk.OptionMenu(
+            extra_frame, self.seleccion_tipo, *map(self._enums_to_string, Seleccion)
+        )
         seleccion_dropdown.grid(row=4, column=1, sticky="we")
 
         # Usar biblioteca
-        biblioteca_check = tk.Checkbutton(extra_frame, text="Usar biblioteca", variable=self.usar_biblioteca, command=self.toggle_biblioteca)
+        biblioteca_check = tk.Checkbutton(
+            extra_frame,
+            text="Usar biblioteca",
+            variable=self.usar_biblioteca,
+            command=self.toggle_biblioteca,
+        )
         biblioteca_check.grid(row=5, column=0, columnspan=2, sticky="w")
 
         # Mutación
         mutacion_label = tk.Label(extra_frame, text="Mutación:")
         mutacion_label.grid(row=6, column=0, sticky="w")
-        mutacion_dropdown = tk.OptionMenu(extra_frame, self.mutacion_tipo, *map(lambda x: x.name.title().replace("_", " "), Mutacion))
+        mutacion_dropdown = tk.OptionMenu(
+            extra_frame, self.mutacion_tipo, *map(self._enums_to_string, Mutacion)
+        )
         mutacion_dropdown.grid(row=6, column=1, sticky="we")
 
         # Crossover
         crossover_label = tk.Label(extra_frame, text="Crossover:")
         crossover_label.grid(row=7, column=0, sticky="w")
-        crossover_dropdown = tk.OptionMenu(extra_frame, self.crossover_tipo, *map(lambda x: x.name.title().replace("_", " "), Crossover))
+        crossover_dropdown = tk.OptionMenu(
+            extra_frame, self.crossover_tipo, *map(self._enums_to_string, Crossover)
+        )
         crossover_dropdown.grid(row=7, column=1, sticky="we")
 
         # Botón ejecutar
@@ -120,6 +166,11 @@ class GeneticAlgorithmUI(tk.Tk):
         state = "normal" if self.elitismo_var.get() else "disabled"
         for widget in self.elitismo_widgets:
             widget.configure(state=state)
+            if state == "normal" and widget is self.num_padres_entry:
+                if self.num_padres_pasados_activo:
+                    widget.configure(state="normal")
+                else:
+                    widget.configure(state="disabled")
 
     def toggle_biblioteca(self):
         state = "disabled" if self.usar_biblioteca.get() else "normal"
@@ -133,6 +184,16 @@ class GeneticAlgorithmUI(tk.Tk):
     def ejecutar(self):
         # Aquí puedes escribir la lógica para ejecutar el algoritmo genético utilizando los valores proporcionados
         pass
+
+    def seleccion_elitismo(self, value):
+        # Si se selecciona elitismo N Padres, se debe activar el número de padres a pasar. Hacer el mapeo con la enumeración
+        if value == self._enums_to_string(Elitismo.PASAR_N_PADRES):
+            self.num_padres_entry.configure(state="normal")
+            self.num_padres_pasados_activo = True
+        else:
+            self.num_padres_entry.configure(state="disabled")
+            self.num_padres_pasados_activo = False
+
 
 # Inicializar la interfaz
 if __name__ == "__main__":

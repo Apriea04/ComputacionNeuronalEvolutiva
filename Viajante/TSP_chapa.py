@@ -1,5 +1,5 @@
 from multiprocessing import Pool
-
+from enums import Seleccion, Mutacion, Crossover, Elitismo
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from Viajante_tradicional_optimizado import (
@@ -25,6 +25,7 @@ import numpy as np
 import multiprocessing
 
 RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
+
 
 def dibujar_individuo(
     individuo: np.ndarray,
@@ -61,7 +62,7 @@ def dibujar_individuo(
     # Crear un gradiente de color para las líneas
     num_lines = len(individuo) - 1
     color_array = np.linspace(0, 1, num_lines)
-    colors = plt.colormaps['brg'](color_array)
+    colors = plt.colormaps["brg"](color_array)
 
     # Crear una colección de líneas con gradiente de color
     lc = LineCollection(segments, colors=colors, linewidth=2)
@@ -76,29 +77,52 @@ def dibujar_individuo(
     return lc
 
 
+def run(a):
+    return ejecutar_ejemplo_viajante_optimizado(
+        ruta_coordenadas="Viajante/Datos/50_coordenadas.txt",
+        dibujar_evolucion=False,
+        verbose=True,
+        parada_en_media=True,
+        plot_resultados_parciales=None,
+        parada_en_clones=False,
+        elitismo=True,
+        cambio_de_mutacion=False,
+    )
+
+# Este método tiene muchos condicionales que no se pueden modificar desde la interfaz gráfica, dado que fueron hechos durante la búsqueda de los mejores parámetros y no han sido eliminados para mostrar que se han probado diferentes configuraciones.
 def ejecutar_ejemplo_viajante_optimizado(
+    ruta_coordenadas: str,
     dibujar_evolucion: bool = False,
     verbose: bool = True,
     parada_en_media=True,
+    max_medias_iguales: int = 10,
     elitismo: bool = True,
     parada_en_clones=False,
     plot_resultados_parciales: bool = True,
     cambio_de_mutacion: bool = False,
+    iteraciones: int = 10000,
+    prob_mutacion: float = 0.13,
+    prob_cruzamiento: float = 0.35,
+    participantes_torneo: int = 2,
+    num_individuos: int = 100,
+    tipo_seleccion: Seleccion = Seleccion.TORNEO,
+    tipo_mutacion: Mutacion = Mutacion.PERMUTAR_ZONA,
+    tipo_crossover: Crossover = Crossover.CROSSOVER_ORDER,
+    tipo_elitismo: Elitismo = Elitismo.PASAR_N_PADRES,
+    padres_a_pasar_elitismo: int = 3,
 ):
     global COORDENADAS
     # ----------------------------------------------------------------------
     # Parámetros
-    NUM_ITERACIONES = (
-        10000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
-    )
-    MAX_MEDIAS_IGUALES = 10
-    PROB_MUTACION = 0.13  # Visto 0.1
-    PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
-    PARTICIPANTES_TORNEO = 2
-    NUM_INDIVIDUOS = 100
-    COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
+    NUM_ITERACIONES = iteraciones  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+    MAX_MEDIAS_IGUALES = max_medias_iguales
+    PROB_MUTACION = prob_mutacion  # Visto 0.1
+    PROB_CRUZAMIENTO = prob_cruzamiento  # 0.35 puede ser buen numero
+    PARTICIPANTES_TORNEO = participantes_torneo
+    NUM_INDIVIDUOS = num_individuos
+    COORDENADAS, MATRIZ = leer_coordenadas(ruta_coordenadas)
     # ----------------------------------------------------------------------
-    
+
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion_optimizada(
@@ -124,47 +148,73 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     for i in range(NUM_ITERACIONES):
         # Seleccionamos los individuos por torneo
+        match tipo_seleccion:
+            case Seleccion.RULETA_PESOS:
+                seleccionados = seleccionar_ruleta_pesos_optimizado(
+                    poblacion, aptitud_viajante, MATRIZ, NUM_INDIVIDUOS
+                )
+            case Seleccion.TORNEO:
+                seleccionados = seleccionar_torneo_optimizado(
+                    poblacion,
+                    PARTICIPANTES_TORNEO,
+                    aptitud_viajante,
+                    MATRIZ,
+                    NUM_INDIVIDUOS,  # TODO: esto depende del crossover
+                )
 
-        seleccionados = seleccionar_torneo_optimizado(
-            poblacion,
-            PARTICIPANTES_TORNEO,
-            aptitud_viajante,
-            MATRIZ,
-            NUM_INDIVIDUOS,  # TODO: esto depende del crossover
-        )
+        match tipo_crossover:
+            case Crossover.CROSSOVER_PARTIALLY_MAPPED:
+                hijos = crossover_partially_mapped_optimizado(
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                )
+            case Crossover.CROSSOVER_ORDER:
+                hijos = crossover_order_optimizado(
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                )
+            case Crossover.CROSSOVER_CYCLE:
+                hijos = crossover_cycle_optimizado(
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                )
+            case Crossover.EDGE_RECOMBINATION_CROSSOVER:
+                hijos = crossover_edge_recombination_optimizado(
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                )
 
-        """
-        # Seleccionamos los individuos por ruleta
-        seleccionados = seleccionar_ruleta_pesos_optimizado(poblacion, aptitud_viajante, MATRIZ, NUM_INDIVIDUOS)
-        """
-        # Cruzamos los seleccionados
-        hijos = crossover_order_optimizado(
-            seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
-        )
+            case Crossover.CROSSOVER_PDF:
+                hijos = crossover_pdf_optimizado(
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                )
 
         # Mutamos los hijos
         for hijo in hijos:
             if np.random.rand() < PROB_MUTACION:
-                hijo = mutar_desordenado_optimizada(hijo)
+                match tipo_mutacion:
+                    case Mutacion.INTERCAMBIAR_INDICES:
+                        hijo = mutar_optimizada(hijo)
+                    case Mutacion.PERMUTAR_ZONA:
+                        hijo = mutar_desordenado_optimizada(hijo)
+                    case Mutacion.INTERCAMBIAR_GENES_VECINOS:
+                        hijo = mutar_mejorada_optimizada(hijo)
 
         # Elitismo
         if elitismo:
-            poblacion = elitismo_n_padres_optimizado(
-                3,
-                poblacion,
-                hijos,
-                NUM_INDIVIDUOS,
-                aptitud_viajante,
-                MATRIZ,
-            )
-            if False and elitismo:
-                poblacion = elitismo_optimizado(
+            match tipo_elitismo:
+                case Elitismo.PADRES_VS_HIJOS:
+                    poblacion = elitismo_optimizado(
                     np.concatenate((poblacion, hijos)),
                     NUM_INDIVIDUOS,
                     aptitud_viajante,
                     MATRIZ,
                 )
-
+                case Elitismo.PASAR_N_PADRES:
+                    poblacion = elitismo_n_padres_optimizado(
+                        padres_a_pasar_elitismo,
+                        poblacion,
+                        hijos,
+                        NUM_INDIVIDUOS,
+                        aptitud_viajante,
+                        MATRIZ,
+                    )
         else:
             poblacion = hijos
 
@@ -256,21 +306,9 @@ def ejecutar_ejemplo_viajante_optimizado(
     return distancias_iteraciones, distancias_medias, poblacion[0]
 
 
-def run(a):
-    return ejecutar_ejemplo_viajante_optimizado(
-        dibujar_evolucion=False,
-        verbose=False,
-        parada_en_media=True,
-        plot_resultados_parciales=None,
-        parada_en_clones=False,
-        elitismo=True,
-        cambio_de_mutacion=False,
-    )
-
-
 if __name__ == "__main__":
-    num_processes = 12
-    
+    num_processes = 4
+
     COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
 
     with Pool(num_processes) as pool:
@@ -299,4 +337,6 @@ if __name__ == "__main__":
     plt.axhline(0, color="salmon")
     plt.title("Mejor Individuo")
     plt.scatter(*zip(*COORDENADAS))
-    dibujar_individuo(best_individual, COORDENADAS, distancia="euclidea", sleep_time=6000)
+    dibujar_individuo(
+        best_individual, COORDENADAS, distancia="euclidea", sleep_time=6000
+    )
