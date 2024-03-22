@@ -3,6 +3,8 @@ from typing import Callable
 import matplotlib.pyplot as plt
 import numpy as np
 
+# TODO: añadir verbose a todo
+
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
 # Código generado por IA
