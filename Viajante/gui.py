@@ -31,6 +31,7 @@ class GeneticAlgorithmUI(tk.Tk):
         self.crossover_tipo = tk.StringVar(
             value=Crossover.CROSSOVER_ORDER.name.lower().capitalize().replace("_", " ")
         )
+        self.fichero_coordenadas = tk.StringVar()
 
         # Crear elementos de la interfaz
         self.create_widgets()
@@ -85,8 +86,29 @@ class GeneticAlgorithmUI(tk.Tk):
         individuos_entry = tk.Entry(main_frame, textvariable=self.num_individuos)
         individuos_entry.grid(row=5, column=1, sticky="we")
 
+        file_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        file_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+        file_frame_title = tk.Label(
+            file_frame, text="Fichero de coordenadas", font=("Helvetica", 12, "bold")
+        )
+        file_frame_title.grid(row=0, column=0, columnspan=2, pady=5)
+
+        # File picker
+        file_button = tk.Button(
+            file_frame, text="Seleccionar coordenadas", command=self.pick_file
+        )
+        file_button.grid(row=1, column=0, columnspan=2, pady=5)
+
+        file_label = tk.Label(file_frame, text="Fichero seleccionado: ")
+        file_label.grid(row=2, column=0, columnspan=2, pady=5)
+        selected_file_label = tk.Label(
+            file_frame, textvariable=self.fichero_coordenadas
+        )
+        selected_file_label.grid(row=3, columnspan=2)
+
         # Frame para la configuración adicional
-        extra_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        extra_frame = tk.Frame(self, bd=3, relief=tk.GROOVE)
         extra_frame.grid(row=0, column=1, padx=10, pady=10)
 
         # Configuración adicional
@@ -94,12 +116,6 @@ class GeneticAlgorithmUI(tk.Tk):
             extra_frame, text="Configuración adicional", font=("Helvetica", 12, "bold")
         )
         extra_label.grid(row=0, column=0, columnspan=2, pady=5)
-
-        # File picker
-        file_button = tk.Button(
-            extra_frame, text="Seleccionar fichero", command=self.pick_file
-        )
-        file_button.grid(row=1, column=0, columnspan=2, pady=5)
 
         # Elitismo
         elitismo_check = tk.Checkbutton(
@@ -145,40 +161,92 @@ class GeneticAlgorithmUI(tk.Tk):
         # Mutación
         mutacion_label = tk.Label(extra_frame, text="Mutación:")
         mutacion_label.grid(row=6, column=0, sticky="w")
-        mutacion_dropdown = tk.OptionMenu(
+        self.mutacion_dropdown = tk.OptionMenu(
             extra_frame, self.mutacion_tipo, *map(self._enums_to_string, Mutacion)
         )
-        mutacion_dropdown.grid(row=6, column=1, sticky="we")
+        self.mutacion_dropdown.grid(row=6, column=1, sticky="we")
 
         # Crossover
         crossover_label = tk.Label(extra_frame, text="Crossover:")
         crossover_label.grid(row=7, column=0, sticky="w")
-        crossover_dropdown = tk.OptionMenu(
+        self.crossover_dropdown = tk.OptionMenu(
             extra_frame, self.crossover_tipo, *map(self._enums_to_string, Crossover)
         )
-        crossover_dropdown.grid(row=7, column=1, sticky="we")
+        self.crossover_dropdown.grid(row=7, column=1, sticky="we")
 
         # Botón ejecutar
         ejecutar_button = tk.Button(self, text="Ejecutar", command=self.ejecutar)
-        ejecutar_button.grid(row=1, column=0, columnspan=2, pady=10)
+        ejecutar_button.grid(row=2, column=0, columnspan=2, pady=10)
 
     def toggle_elitismo(self):
         state = "normal" if self.elitismo_var.get() else "disabled"
-        for widget in self.elitismo_widgets:
-            widget.configure(state=state)
-            if state == "normal" and widget is self.num_padres_entry:
-                if self.num_padres_pasados_activo:
-                    widget.configure(state="normal")
-                else:
-                    widget.configure(state="disabled")
+        if not self.usar_biblioteca.get():
+            for widget in self.elitismo_widgets:
+                widget.configure(state=state)
+                if state == "normal" and widget is self.num_padres_entry:
+                    if self.num_padres_pasados_activo:
+                        widget.configure(state="normal")
+                    else:
+                        widget.configure(state="disabled")
 
     def toggle_biblioteca(self):
         state = "disabled" if self.usar_biblioteca.get() else "normal"
         self.elitismo_dropdown.configure(state=state)
-        self.num_padres_entry.configure(state=state)
+
+        # De mutaciones quitamos la opción de intercambiar indices vecinos
+        if self.usar_biblioteca.get():
+            self.mutacion_dropdown["menu"].delete(2)
+            self.num_padres_entry.configure(state="disabled")
+            # Eliminamos los crossover que no estén implementados
+            self.crossover_dropdown["menu"].delete(4)
+            self.crossover_dropdown["menu"].delete(3)
+            self.crossover_dropdown["menu"].delete(2)
+            
+            # Si está seleccionado alguno de los que no hay, lo cambiamos a uno que sí
+            if self.crossover_tipo.get() == self._enums_to_string(Crossover.CROSSOVER_CYCLE) or self.crossover_tipo.get() == self._enums_to_string(Crossover.EDGE_RECOMBINATION_CROSSOVER) or self.crossover_tipo.get() == self._enums_to_string(Crossover.CROSSOVER_PDF):
+                self.crossover_tipo.set(self._enums_to_string(Crossover.CROSSOVER_ORDER))
+                
+            if self.mutacion_tipo.get() == self._enums_to_string(Mutacion.INTERCAMBIAR_GENES_VECINOS):
+                self.mutacion_tipo.set(self._enums_to_string(Mutacion.PERMUTAR_ZONA))
+                
+            if self.elitismo_tipo.get() == self._enums_to_string(Elitismo.PASAR_N_PADRES):
+                self.elitismo_tipo.set(self._enums_to_string(Elitismo.PADRES_VS_HIJOS))
+        else:
+            if self.num_padres_pasados_activo:
+                self.num_padres_entry.configure(state="normal")
+            # Insertamos la mutacion en el desplegable
+            self.mutacion_dropdown["menu"].insert_command(
+                2,
+                label="Intercambiar indices vecinos",
+                command=lambda: self.mutacion_tipo.set("Intercambiar indices vecinos"),
+            )
+
+            # Insertamos los crossover que hemos quitado
+            self.crossover_dropdown["menu"].insert_command(
+                3,
+                label=self._enums_to_string(Crossover.CROSSOVER_CYCLE),
+                command=lambda: self.crossover_tipo.set(
+                    self._enums_to_string(Crossover.CROSSOVER_CYCLE)
+                ),
+            )
+            self.crossover_dropdown["menu"].insert_command(
+                4,
+                label=self._enums_to_string(Crossover.EDGE_RECOMBINATION_CROSSOVER),
+                command=lambda: self.crossover_tipo.set(
+                    self._enums_to_string(Crossover.EDGE_RECOMBINATION_CROSSOVER)
+                ),
+            )
+            self.crossover_dropdown["menu"].insert_command(
+                5,
+                label=self._enums_to_string(Crossover.CROSSOVER_PDF),
+                command=lambda: self.crossover_tipo.set(
+                    self._enums_to_string(Crossover.CROSSOVER_PDF)
+                ),
+            )
 
     def pick_file(self):
         filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+        self.fichero_coordenadas.set(filename)
         print("Archivo seleccionado:", filename)
 
     def ejecutar(self):

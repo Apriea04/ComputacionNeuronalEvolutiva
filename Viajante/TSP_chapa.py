@@ -104,7 +104,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     prob_mutacion: float = 0.13,
     prob_cruzamiento: float = 0.35,
     participantes_torneo: int = 2,
-    num_individuos: int = 100,
+    num_individuos: int = 50,
     tipo_seleccion: Seleccion = Seleccion.TORNEO,
     tipo_mutacion: Mutacion = Mutacion.PERMUTAR_ZONA,
     tipo_crossover: Crossover = Crossover.CROSSOVER_ORDER,
@@ -307,7 +307,7 @@ def ejecutar_ejemplo_viajante_optimizado(
 
 
 if __name__ == "__main__":
-    num_processes = 4
+    num_processes = 10
 
     COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
 
