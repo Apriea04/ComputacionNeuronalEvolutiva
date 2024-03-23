@@ -103,7 +103,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     iteraciones: int = 10000,
     prob_mutacion: float = 0.13,
     prob_cruzamiento: float = 0.35,
-    participantes_torneo: int = 2,
+    participantes_torneo: int = 3,
     num_individuos: int = 50,
     tipo_seleccion: Seleccion = Seleccion.TORNEO,
     tipo_mutacion: Mutacion = Mutacion.PERMUTAR_ZONA,

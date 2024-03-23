@@ -11,12 +11,12 @@ from enums import Elitismo, Seleccion, Crossover, Mutacion
 # Parámetros
 NUM_EJECUCIONES = 10
 NUM_ITERACIONES = (
-    10000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
+    20000  # Comprobar numero Con 10000 iteraciones llega a soluciones muy buenas
 )
 PROB_MUTACION = 0.13  # Visto 0.13
 PROB_CRUZAMIENTO = 0.35  # 0.35 puede ser buen numero
 PARTICIPANTES_TORNEO = 3
-NUM_INDIVIDUOS = 50
+NUM_INDIVIDUOS = 100
 RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
 COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
 CROSSOVER = Crossover.CROSSOVER_ORDER

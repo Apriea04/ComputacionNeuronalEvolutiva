@@ -217,8 +217,8 @@ class GeneticAlgorithmUI(tk.Tk):
             # Insertamos la mutacion en el desplegable
             self.mutacion_dropdown["menu"].insert_command(
                 2,
-                label="Intercambiar indices vecinos",
-                command=lambda: self.mutacion_tipo.set("Intercambiar indices vecinos"),
+                label=self._enums_to_string(Mutacion.INTERCAMBIAR_GENES_VECINOS),
+                command=lambda: self.mutacion_tipo.set(self._enums_to_string(Mutacion.INTERCAMBIAR_GENES_VECINOS)),
             )
 
             # Insertamos los crossover que hemos quitado
