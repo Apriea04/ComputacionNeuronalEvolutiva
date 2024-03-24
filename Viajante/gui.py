@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from enums import Seleccion, Mutacion, Crossover, Elitismo
+from TSP_chapa import ejecutar_ejemplo_viajante_optimizado
 
 
 class GeneticAlgorithmUI(tk.Tk):
@@ -271,8 +272,6 @@ class GeneticAlgorithmUI(tk.Tk):
         print("Fichero de coordenadas:", self.fichero_coordenadas.get())
         print("Verbose:", self.verbose_var.get())
         
-        pass
-
     def seleccion_elitismo(self, value):
         # Si se selecciona elitismo N Padres, se debe activar el número de padres a pasar. Hacer el mapeo con la enumeración
         if value == self._enums_to_string(Elitismo.PASAR_N_PADRES):
@@ -282,7 +281,11 @@ class GeneticAlgorithmUI(tk.Tk):
             self.num_padres_entry.configure(state="disabled")
             self.num_padres_pasados_activo = False
 
-
+    def ejecutar(self):
+        if self.usar_biblioteca.get():
+            pass
+            
+            
 # Inicializar la interfaz
 if __name__ == "__main__":
     app = GeneticAlgorithmUI()
