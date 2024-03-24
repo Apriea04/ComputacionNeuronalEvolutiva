@@ -6,7 +6,7 @@ from enums import Seleccion, Mutacion, Crossover, Elitismo
 class GeneticAlgorithmUI(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Algoritmo Genético")
+        self.title("Configuración del Algoritmo Genético TSP")
 
         # Variables de control
         self.num_ejecuciones = tk.IntVar(value=1)
@@ -52,7 +52,7 @@ class GeneticAlgorithmUI(tk.Tk):
         config_label.grid(row=0, column=0, columnspan=2, pady=5)
 
         # Numero de ejecuciones
-        ejecuciones_label = tk.Label(main_frame, text="Numero de ejecuciones:")
+        ejecuciones_label = tk.Label(main_frame, text="Número de ejecuciones paralelas:")
         ejecuciones_label.grid(row=1, column=0, sticky="w")
         ejecuciones_slider = tk.Scale(
             main_frame,
@@ -64,7 +64,7 @@ class GeneticAlgorithmUI(tk.Tk):
         ejecuciones_slider.grid(row=1, column=1, sticky="we")
 
         # Numero de iteraciones
-        iteraciones_label = tk.Label(main_frame, text="Numero de iteraciones:")
+        iteraciones_label = tk.Label(main_frame, text="Número de iteraciones:")
         iteraciones_label.grid(row=2, column=0, sticky="w")
         iteraciones_entry = tk.Entry(main_frame, textvariable=self.num_iteraciones)
         iteraciones_entry.grid(row=2, column=1, sticky="we")
@@ -82,7 +82,7 @@ class GeneticAlgorithmUI(tk.Tk):
         crossover_entry.grid(row=4, column=1, sticky="we")
 
         # Numero de individuos
-        individuos_label = tk.Label(main_frame, text="Numero de individuos:")
+        individuos_label = tk.Label(main_frame, text="Número de individuos:")
         individuos_label.grid(row=5, column=0, sticky="w")
         individuos_entry = tk.Entry(main_frame, textvariable=self.num_individuos)
         individuos_entry.grid(row=5, column=1, sticky="we")
@@ -105,13 +105,10 @@ class GeneticAlgorithmUI(tk.Tk):
             file_frame, text="Seleccionar coordenadas", command=self.pick_file
         )
         file_button.grid(row=1, column=0, columnspan=2, pady=5)
-
-        file_label = tk.Label(file_frame, text="Fichero seleccionado: ")
-        file_label.grid(row=2, column=0, columnspan=2, pady=5)
         selected_file_label = tk.Label(
             file_frame, textvariable=self.fichero_coordenadas
         )
-        selected_file_label.grid(row=3, columnspan=2)
+        selected_file_label.grid(row=2, columnspan=2)
 
         # Frame para la configuración adicional
         extra_frame = tk.Frame(self, bd=3, relief=tk.GROOVE)
@@ -255,10 +252,25 @@ class GeneticAlgorithmUI(tk.Tk):
     def pick_file(self):
         filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         self.fichero_coordenadas.set(filename)
-        print("Archivo seleccionado:", filename)
 
     def ejecutar(self):
-        # Aquí puedes escribir la lógica para ejecutar el algoritmo genético utilizando los valores proporcionados
+        # Obtener todos los valores de la interfaz e imprimirlos por consola
+        print("Número de ejecuciones:", self.num_ejecuciones.get())
+        print("Número de iteraciones:", self.num_iteraciones.get())
+        print("Probabilidad de mutación:", self.prob_mutacion.get())
+        print("Probabilidad de crossover:", self.prob_crossover.get())
+        print("Número de individuos:", self.num_individuos.get())
+        print("Elitismo:", self.elitismo_var.get())
+        print("Tipo de elitismo:", self.elitismo_tipo.get())
+        print("Número de padres pasados:", self.num_padres_pasados.get())
+        print("Tipo de selección:", self.seleccion_tipo.get())
+        print("Número de participantes:", self.num_participantes.get())
+        print("Usar biblioteca:", self.usar_biblioteca.get())
+        print("Tipo de mutación:", self.mutacion_tipo.get())
+        print("Tipo de crossover:", self.crossover_tipo.get())
+        print("Fichero de coordenadas:", self.fichero_coordenadas.get())
+        print("Verbose:", self.verbose_var.get())
+        
         pass
 
     def seleccion_elitismo(self, value):
