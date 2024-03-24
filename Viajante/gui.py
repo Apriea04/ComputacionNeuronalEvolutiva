@@ -31,7 +31,8 @@ class GeneticAlgorithmUI(tk.Tk):
         self.crossover_tipo = tk.StringVar(
             value=Crossover.CROSSOVER_ORDER.name.lower().capitalize().replace("_", " ")
         )
-        self.fichero_coordenadas = tk.StringVar()
+        self.fichero_coordenadas = tk.StringVar(value="Ningún archivo seleccionado")
+        self.verbose_var = tk.BooleanVar(value=False)
 
         # Crear elementos de la interfaz
         self.create_widgets()
@@ -85,6 +86,11 @@ class GeneticAlgorithmUI(tk.Tk):
         individuos_label.grid(row=5, column=0, sticky="w")
         individuos_entry = tk.Entry(main_frame, textvariable=self.num_individuos)
         individuos_entry.grid(row=5, column=1, sticky="we")
+        
+        # Verbose
+        verbose_check = tk.Checkbutton(main_frame, text="Verbose", variable=self.verbose_var)
+        verbose_check.grid(row=6, column=0, columnspan=2, sticky="w")
+        
 
         file_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
         file_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
@@ -118,13 +124,13 @@ class GeneticAlgorithmUI(tk.Tk):
         extra_label.grid(row=0, column=0, columnspan=2, pady=5)
 
         # Elitismo
-        elitismo_check = tk.Checkbutton(
+        self.elitismo_check = tk.Checkbutton(
             extra_frame,
             text="Elitismo",
             variable=self.elitismo_var,
             command=self.toggle_elitismo,
         )
-        elitismo_check.grid(row=2, column=0, columnspan=2, sticky="w")
+        self.elitismo_check.grid(row=2, column=0, columnspan=2, sticky="w")
         self.elitismo_widgets = []
         self.elitismo_dropdown = tk.OptionMenu(
             extra_frame,
@@ -180,27 +186,28 @@ class GeneticAlgorithmUI(tk.Tk):
 
     def toggle_elitismo(self):
         state = "normal" if self.elitismo_var.get() else "disabled"
-        if not self.usar_biblioteca.get():
-            for widget in self.elitismo_widgets:
-                widget.configure(state=state)
-                if state == "normal" and widget is self.num_padres_entry:
-                    if self.num_padres_pasados_activo:
-                        widget.configure(state="normal")
-                    else:
-                        widget.configure(state="disabled")
+        for widget in self.elitismo_widgets:
+            widget.configure(state=state)
+            if state == "normal" and widget is self.num_padres_entry:
+                if self.num_padres_pasados_activo:
+                    widget.configure(state="normal")
+                else:
+                    widget.configure(state="disabled")
 
     def toggle_biblioteca(self):
-        state = "disabled" if self.usar_biblioteca.get() else "normal"
-        self.elitismo_dropdown.configure(state=state)
-
-        # De mutaciones quitamos la opción de intercambiar indices vecinos
         if self.usar_biblioteca.get():
             self.mutacion_dropdown["menu"].delete(2)
-            self.num_padres_entry.configure(state="disabled")
             # Eliminamos los crossover que no estén implementados
             self.crossover_dropdown["menu"].delete(4)
             self.crossover_dropdown["menu"].delete(3)
             self.crossover_dropdown["menu"].delete(2)
+            
+            # Activamos el chebox de elitismo
+            self.elitismo_var.set(True)
+            self.toggle_elitismo()
+            
+            # Inhabilitamos el checkbox de elitismo
+            self.elitismo_check.configure(state="disabled")
             
             # Si está seleccionado alguno de los que no hay, lo cambiamos a uno que sí
             if self.crossover_tipo.get() == self._enums_to_string(Crossover.CROSSOVER_CYCLE) or self.crossover_tipo.get() == self._enums_to_string(Crossover.EDGE_RECOMBINATION_CROSSOVER) or self.crossover_tipo.get() == self._enums_to_string(Crossover.CROSSOVER_PDF):
@@ -209,8 +216,6 @@ class GeneticAlgorithmUI(tk.Tk):
             if self.mutacion_tipo.get() == self._enums_to_string(Mutacion.INTERCAMBIAR_GENES_VECINOS):
                 self.mutacion_tipo.set(self._enums_to_string(Mutacion.PERMUTAR_ZONA))
                 
-            if self.elitismo_tipo.get() == self._enums_to_string(Elitismo.PASAR_N_PADRES):
-                self.elitismo_tipo.set(self._enums_to_string(Elitismo.PADRES_VS_HIJOS))
         else:
             if self.num_padres_pasados_activo:
                 self.num_padres_entry.configure(state="normal")
@@ -243,6 +248,9 @@ class GeneticAlgorithmUI(tk.Tk):
                     self._enums_to_string(Crossover.CROSSOVER_PDF)
                 ),
             )
+            
+            # Habilitamos el check de elitismo
+            self.elitismo_check.configure(state="normal")
 
     def pick_file(self):
         filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
