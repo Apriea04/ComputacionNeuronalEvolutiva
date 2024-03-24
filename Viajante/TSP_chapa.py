@@ -1,9 +1,7 @@
 from multiprocessing import Pool
 from enums import Seleccion, Mutacion, Crossover, Elitismo
 from matplotlib.collections import LineCollection
-from matplotlib.colors import LinearSegmentedColormap, Normalize
 from Viajante_tradicional_optimizado import (
-    leer_distancias_optimizada,
     crear_poblacion_optimizada,
     aptitud_viajante,
     seleccionar_torneo_optimizado,
@@ -22,7 +20,6 @@ from Viajante_tradicional_optimizado import (
 from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing
 
 RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
 
@@ -77,18 +74,6 @@ def dibujar_individuo(
     return lc
 
 
-def run(a):
-    return ejecutar_ejemplo_viajante_optimizado(
-        ruta_coordenadas="Viajante/Datos/50_coordenadas.txt",
-        dibujar_evolucion=False,
-        verbose=True,
-        parada_en_media=True,
-        plot_resultados_parciales=None,
-        parada_en_clones=False,
-        elitismo=True,
-        cambio_de_mutacion=False,
-    )
-
 # Este método tiene muchos condicionales que no se pueden modificar desde la interfaz gráfica, dado que fueron hechos durante la búsqueda de los mejores parámetros y no han sido eliminados para mostrar que se han probado diferentes configuraciones.
 def ejecutar_ejemplo_viajante_optimizado(
     ruta_coordenadas: str,
@@ -100,7 +85,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     parada_en_clones=False,
     plot_resultados_parciales: bool = True,
     cambio_de_mutacion: bool = False,
-    iteraciones: int = 10000,
+    iteraciones: int = 100,
     prob_mutacion: float = 0.13,
     prob_cruzamiento: float = 0.35,
     participantes_torneo: int = 3,
@@ -266,7 +251,6 @@ def ejecutar_ejemplo_viajante_optimizado(
                     "#################################  Cambio de mutación  #################################"
                 )
                 PROB_MUTACION = 0.5
-                GENES_MUTAR = 2
 
         if parada_en_clones:
             if (
@@ -305,26 +289,71 @@ def ejecutar_ejemplo_viajante_optimizado(
 
     return distancias_iteraciones, distancias_medias, poblacion[0]
 
+def ejecucion_paralela(
+    procesos: int,
+    ruta_coordenadas: str,
+    dibujar_evolucion: bool = False,
+    verbose: bool = True,
+    parada_en_media=True,
+    max_medias_iguales: int = 10,
+    elitismo: bool = True,
+    parada_en_clones=False,
+    plot_resultados_parciales: bool = True,
+    cambio_de_mutacion: bool = False,
+    iteraciones: int = 100,
+    prob_mutacion: float = 0.13,
+    prob_cruzamiento: float = 0.35,
+    participantes_torneo: int = 3,
+    num_individuos: int = 50,
+    tipo_seleccion: Seleccion = Seleccion.TORNEO,
+    tipo_mutacion: Mutacion = Mutacion.PERMUTAR_ZONA,
+    tipo_crossover: Crossover = Crossover.CROSSOVER_ORDER,
+    tipo_elitismo: Elitismo = Elitismo.PASAR_N_PADRES,
+    padres_a_pasar_elitismo: int = 3,):
+    
+    coordenadas, matriz = leer_coordenadas(ruta_coordenadas)
+    results = []
 
-if __name__ == "__main__":
-    num_processes = 10
+    with Pool(processes=procesos) as pool:
+        for _ in range(procesos):
+            result = pool.apply_async(
+                ejecutar_ejemplo_viajante_optimizado,
+                args=(
+                    ruta_coordenadas,
+                    dibujar_evolucion,
+                    verbose,
+                    parada_en_media,
+                    max_medias_iguales,
+                    elitismo,
+                    parada_en_clones,
+                    plot_resultados_parciales,
+                    cambio_de_mutacion,
+                    iteraciones,
+                    prob_mutacion,
+                    prob_cruzamiento,
+                    participantes_torneo,
+                    num_individuos,
+                    tipo_seleccion,
+                    tipo_mutacion,
+                    tipo_crossover,
+                    tipo_elitismo,
+                    padres_a_pasar_elitismo,
+                ),
+            )
+            results.append(result)
 
-    COORDENADAS, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
+        best_distance = float("inf")
+        best_individual = None
 
-    with Pool(num_processes) as pool:
-        results = pool.map(run, range(num_processes))
-
-    best_distance = float("inf")
-    best_individual = None
-
-    for distances, media, individual in results:
-        # Imprimimos los resultados:
-        print(
-            f"Iteraciones: {len(distances)}\tDistancias: {distances[-1]}\tMedia: {media[-1]}"
-        )
-        if distances[-1] < best_distance:
-            best_distance = distances[-1]
-            best_individual = individual
+        for result in results:
+            distances, media, individual = result.get()
+            # Imprimimos los resultados:
+            print(
+                f"Iteraciones: {len(distances)}\tDistancias: {distances[-1]}\tMedia: {media[-1]}"
+            )
+            if distances[-1] < best_distance:
+                best_distance = distances[-1]
+                best_individual = individual
 
     print("\n\n\n\n")
     print("Mejor distance:", best_distance)
@@ -336,7 +365,11 @@ if __name__ == "__main__":
     plt.axvline(0, color="salmon")
     plt.axhline(0, color="salmon")
     plt.title("Mejor Individuo")
-    plt.scatter(*zip(*COORDENADAS))
+    plt.scatter(*zip(*coordenadas))
     dibujar_individuo(
-        best_individual, COORDENADAS, distancia="euclidea", sleep_time=6000
+        best_individual, coordenadas, distancia="euclidea", sleep_time=6000
     )
+
+if __name__ == "__main__":
+    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.CROSSOVER_ORDER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1)
+    
