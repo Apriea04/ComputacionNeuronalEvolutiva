@@ -55,8 +55,6 @@ class GeneticAlgorithmUI(tk.Tk):
 
         # Crear elementos de la interfaz
         self.create_widgets()
-        
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _enums_to_string(self, enum):
         return enum.name.lower().capitalize().replace("_", " ")
@@ -80,7 +78,7 @@ class GeneticAlgorithmUI(tk.Tk):
         ejecuciones_slider = tk.Scale(
             main_frame,
             from_=1,
-            to=16,
+            to=os.cpu_count()*2,
             variable=self.num_ejecuciones,
             orient="horizontal",
         )
@@ -404,17 +402,6 @@ class GeneticAlgorithmUI(tk.Tk):
         else:
             self.participantes_torneo_label.configure(state="normal")
             self.participantes_torneo_entry.configure(state="normal")
-
-    def on_close(self): # TODO
-        # Parar todos los hilos
-        for hilo in self.hilos:
-            if hilo.is_alive():
-                pid = hilo.ident
-                if os.name == "nt":  # Windows
-                    ctypes.windll.kernel32.TerminateThread(ctypes.c_void_p(pid), -1)
-                else:  # Linux
-                    os.kill(pid, signal.SIGKILL)
-        self.destroy()
 
     def ejecutar(self):
         self.ejecutar_button.configure(state="disabled", text="Ejecutando...")
