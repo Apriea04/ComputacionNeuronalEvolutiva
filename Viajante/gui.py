@@ -51,7 +51,7 @@ class GeneticAlgorithmUI(tk.Tk):
 
     def create_widgets(self):
         # Frame para agrupar la configuración principal
-        main_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        main_frame = tk.Frame(self, bd=3, relief=tk.GROOVE)
         main_frame.grid(row=0, column=0, padx=10, pady=10)
 
         # Configuración principal
@@ -110,7 +110,7 @@ class GeneticAlgorithmUI(tk.Tk):
         biblioteca_check.grid(row=6, column=1, columnspan=1, sticky="w")
         
 
-        file_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        file_frame = tk.Frame(self, bd=3, relief=tk.GROOVE)
         file_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
 
         file_frame_title = tk.Label(
@@ -194,7 +194,7 @@ class GeneticAlgorithmUI(tk.Tk):
         ejecutar_button.grid(row=3, column=0, columnspan=2, pady=10)
         
         # Frame para configuración específica del algoritmo sin biblioteca
-        self.sin_biblioteca_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        self.sin_biblioteca_frame = tk.Frame(self, bd=3, relief=tk.GROOVE)
         self.sin_biblioteca_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
         
         sin_biblioteca_title = tk.Label(
