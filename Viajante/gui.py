@@ -345,7 +345,7 @@ class GeneticAlgorithmUI(tk.Tk):
     def ejecutar(self):
         # Obtener todos los valores de la interfaz e imprimirlos por consola
         print("Número de ejecuciones:", self.num_ejecuciones.get())
-        print("Número de iteraciones:", self.num_iteraciones.get())
+        print("Número de generaciones:", self.num_iteraciones.get())
         print("Probabilidad de mutación:", self.prob_mutacion.get())
         print("Probabilidad de crossover:", self.prob_crossover.get())
         print("Número de individuos:", self.num_individuos.get())
@@ -368,10 +368,6 @@ class GeneticAlgorithmUI(tk.Tk):
         else:
             self.num_padres_entry.configure(state="disabled")
             self.num_padres_pasados_activo = False
-
-    def ejecutar(self):
-        if self.usar_biblioteca.get():
-            pass
             
 def change_state_container(container, state):
     for child in container.winfo_children():
