@@ -17,7 +17,7 @@ class GeneticAlgorithmUI(tk.Tk):
         self.title("Configuración del Algoritmo Genético TSP")
 
         # Variables de control
-        self.num_ejecuciones = tk.IntVar(value=1)
+        self.num_ejecuciones = tk.IntVar(value=2)
         self.num_iteraciones = tk.IntVar(value=1000)
         self.prob_mutacion = tk.DoubleVar(value=0.13)
         self.prob_crossover = tk.DoubleVar(value=0.35)
@@ -26,12 +26,12 @@ class GeneticAlgorithmUI(tk.Tk):
         self.elitismo_tipo = tk.StringVar(
             value=Elitismo.PASAR_N_PADRES.name.lower().capitalize().replace("_", " ")
         )
-        self.num_padres_pasados = tk.IntVar(value=1)
+        self.num_padres_pasados = tk.IntVar(value=3)
         self.num_padres_pasados_activo = True
         self.seleccion_tipo = tk.StringVar(
             value=Seleccion.TORNEO.name.lower().capitalize().replace("_", " ")
         )
-        self.participantes_torneo = tk.IntVar(value=2)
+        self.participantes_torneo = tk.IntVar(value=3)
         self.usar_biblioteca = tk.BooleanVar(value=False)
         self.mutacion_tipo = tk.StringVar(
             value=Mutacion.PERMUTAR_ZONA.name.lower().capitalize().replace("_", " ")
@@ -120,6 +120,7 @@ class GeneticAlgorithmUI(tk.Tk):
             text="Usar biblioteca",
             variable=self.usar_biblioteca,
             command=self.toggle_biblioteca,
+            font=("Helvetica", 9, "bold")
         )
         biblioteca_check.grid(row=6, column=1, columnspan=1, sticky="w")
 
