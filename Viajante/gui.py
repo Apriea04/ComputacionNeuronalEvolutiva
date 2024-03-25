@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog
 from enums import Seleccion, Mutacion, Crossover, Elitismo
-from TSP_chapa import ejecutar_ejemplo_viajante_optimizado
-
+import TSP_chapa as miTSP
+import TSP_biblioteca as deapTSP
 
 class GeneticAlgorithmUI(tk.Tk):
     def __init__(self):
@@ -11,20 +11,20 @@ class GeneticAlgorithmUI(tk.Tk):
 
         # Variables de control
         self.num_ejecuciones = tk.IntVar(value=1)
-        self.num_iteraciones = tk.StringVar(value="1000")
-        self.prob_mutacion = tk.StringVar(value="0.13")
-        self.prob_crossover = tk.StringVar(value="0.35")
-        self.num_individuos = tk.StringVar(value="100")
+        self.num_iteraciones = tk.IntVar(value=1000)
+        self.prob_mutacion = tk.DoubleVar(value=0.13)
+        self.prob_crossover = tk.DoubleVar(value=0.35)
+        self.num_individuos = tk.IntVar(value=100)
         self.elitismo_var = tk.BooleanVar(value=True)
         self.elitismo_tipo = tk.StringVar(
             value=Elitismo.PASAR_N_PADRES.name.lower().capitalize().replace("_", " ")
         )
-        self.num_padres_pasados = tk.StringVar(value="1")
+        self.num_padres_pasados = tk.IntVar(value=1)
         self.num_padres_pasados_activo = True
         self.seleccion_tipo = tk.StringVar(
             value=Seleccion.TORNEO.name.lower().capitalize().replace("_", " ")
         )
-        self.num_participantes = tk.StringVar(value="2")
+        self.participantes_torneo = tk.IntVar(value=2)
         self.usar_biblioteca = tk.BooleanVar(value=False)
         self.mutacion_tipo = tk.StringVar(
             value=Mutacion.PERMUTAR_ZONA.name.lower().capitalize().replace("_", " ")
@@ -33,7 +33,7 @@ class GeneticAlgorithmUI(tk.Tk):
             value=Crossover.CROSSOVER_ORDER.name.lower().capitalize().replace("_", " ")
         )
         self.fichero_coordenadas = tk.StringVar(value="Ningún archivo seleccionado")
-        self.verbose_var = tk.BooleanVar(value=False)
+        self.verbose_var = tk.BooleanVar(value=True)
         
         # Varibles de control para el algoritmo sin biblioteca
         self.dibujar_evolucion = tk.BooleanVar(value=False)
@@ -166,12 +166,20 @@ class GeneticAlgorithmUI(tk.Tk):
         self.toggle_elitismo()
 
         # Selección
-        seleccion_label = tk.Label(operadores_frame, text="Selección:")
+        seleccion_frame = tk.Frame(operadores_frame, bd=1, relief=tk.SOLID)
+        seleccion_frame.grid(row=4, column=0, columnspan=2, pady=5, padx=5, sticky="we")
+        seleccion_label = tk.Label(seleccion_frame, text="Selección:")
         seleccion_label.grid(row=4, column=0, sticky="w")
         seleccion_dropdown = tk.OptionMenu(
-            operadores_frame, self.seleccion_tipo, *map(self._enums_to_string, Seleccion)
+            seleccion_frame, self.seleccion_tipo, *map(self._enums_to_string, Seleccion), command=self.toggle_seleccion
         )
         seleccion_dropdown.grid(row=4, column=1, sticky="we")
+        self.participantes_torneo_label = tk.Label(seleccion_frame, text="Participantes torneo:")
+        self.participantes_torneo_label.grid(row=5, column=0, sticky="w")
+        self.participantes_torneo_entry = tk.Entry(
+            seleccion_frame, textvariable=self.participantes_torneo
+        )
+        self.participantes_torneo_entry.grid(row=5, column=1, sticky="we")
 
         # Mutación
         mutacion_label = tk.Label(operadores_frame, text="Mutación:")
@@ -342,23 +350,34 @@ class GeneticAlgorithmUI(tk.Tk):
         filename = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         self.fichero_coordenadas.set(filename)
 
+    def toggle_seleccion(self, value):
+        if value != self._enums_to_string(Seleccion.TORNEO):
+            self.participantes_torneo_label.configure(state="disabled")
+            self.participantes_torneo_entry.configure(state="disabled")
+        else:
+            self.participantes_torneo_label.configure(state="normal")
+            self.participantes_torneo_entry.configure(state="normal")
+    
     def ejecutar(self):
-        # Obtener todos los valores de la interfaz e imprimirlos por consola
-        print("Número de ejecuciones:", self.num_ejecuciones.get())
-        print("Número de generaciones:", self.num_iteraciones.get())
-        print("Probabilidad de mutación:", self.prob_mutacion.get())
-        print("Probabilidad de crossover:", self.prob_crossover.get())
-        print("Número de individuos:", self.num_individuos.get())
-        print("Elitismo:", self.elitismo_var.get())
-        print("Tipo de elitismo:", self.elitismo_tipo.get())
-        print("Número de padres pasados:", self.num_padres_pasados.get())
-        print("Tipo de selección:", self.seleccion_tipo.get())
-        print("Número de participantes:", self.num_participantes.get())
-        print("Usar biblioteca:", self.usar_biblioteca.get())
-        print("Tipo de mutación:", self.mutacion_tipo.get())
-        print("Tipo de crossover:", self.crossover_tipo.get())
-        print("Fichero de coordenadas:", self.fichero_coordenadas.get())
-        print("Verbose:", self.verbose_var.get())
+        try:
+            if self.fichero_coordenadas.get() == "Ningún archivo seleccionado":
+                raise tk.TclError("No coordinates file selected. Please select a file.")
+            
+            tipo_seleccion = Seleccion[self.seleccion_tipo.get().upper().replace(" ", "_")]
+            tipo_mutacion = Mutacion[self.mutacion_tipo.get().upper().replace(" ", "_")]
+            tipo_crossover = Crossover[self.crossover_tipo.get().upper().replace(" ", "_")]
+            tipo_elitismo = Elitismo[self.elitismo_tipo.get().upper().replace(" ", "_")]
+            
+            if self.usar_biblioteca.get():
+                deapTSP.ejecucion_paralela(self.num_ejecuciones.get(), self.fichero_coordenadas.get(), self.verbose_var.get(), self.num_iteraciones.get(), self.prob_mutacion.get(), self.prob_crossover.get(), self.participantes_torneo.get(), self.num_individuos.get(), tipo_seleccion, tipo_mutacion, tipo_crossover, tipo_elitismo, self.num_padres_pasados.get())
+                
+            else:
+                miTSP.ejecucion_paralela(self.num_ejecuciones.get(), self.fichero_coordenadas.get(), self.dibujar_evolucion.get(), self.verbose_var.get(), self.parada_en_media.get(), self.max_medias_iguales.get(), self.elitismo_var.get(), self.parada_en_clones.get(), self.plot_resultados_parciales.get(), self.cambio_de_mutacion.get(), self.num_iteraciones.get(), self.prob_mutacion.get(), self.prob_crossover.get(), self.participantes_torneo.get(), self.num_individuos.get(), tipo_seleccion, tipo_mutacion, tipo_crossover, tipo_elitismo, self.num_padres_pasados.get())
+                
+        except tk.TclError as e:
+            # Lanzar un modal con el error:
+            tk.messagebox.showerror("Error", str(e))
+            
         
     def seleccion_elitismo(self, value):
         # Si se selecciona elitismo N Padres, se debe activar el número de padres a pasar. Hacer el mapeo con la enumeración
