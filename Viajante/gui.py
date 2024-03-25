@@ -111,7 +111,7 @@ class GeneticAlgorithmUI(tk.Tk):
         
 
         file_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
-        file_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+        file_frame.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
 
         file_frame_title = tk.Label(
             file_frame, text="Fichero de coordenadas", font=("Helvetica", 12, "bold")
@@ -194,61 +194,75 @@ class GeneticAlgorithmUI(tk.Tk):
         ejecutar_button.grid(row=3, column=0, columnspan=2, pady=10)
         
         # Frame para configuración específica del algoritmo sin biblioteca
-        sin_biblioteca_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
-        sin_biblioteca_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.sin_biblioteca_frame = tk.Frame(self, bd=2, relief=tk.GROOVE)
+        self.sin_biblioteca_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
         
         sin_biblioteca_title = tk.Label(
-            sin_biblioteca_frame, text="Configuración específica del algoritmo sin biblioteca", font=("Helvetica", 12, "bold")
+            self.sin_biblioteca_frame, text="Configuración específica del algoritmo sin biblioteca", font=("Helvetica", 12, "bold")
         )
         
         sin_biblioteca_title.grid(row=0, column=0, columnspan=2, pady=5)
         
         # Dibujar evolución
         dibujar_evolucion_check = tk.Checkbutton(
-            sin_biblioteca_frame,
+            self.sin_biblioteca_frame,
             text="Mostrar gráfica con la evolución",
             variable=self.dibujar_evolucion
         )
         dibujar_evolucion_check.grid(row=1, column=0, columnspan=1, sticky="w")
         
-        # Parada en media
-        parada_en_media_frame = tk.Frame(sin_biblioteca_frame, bd=1, relief=tk.SOLID)
-        parada_en_media_frame.columnconfigure(0, weight=1)
-        parada_en_media_frame.columnconfigure(1, weight=1)
-        parada_en_media_frame.columnconfigure(2, weight=1)
-        parada_en_media_frame.grid(row=3, column=0, columnspan=3, pady=5, padx=5, sticky="we")
+        # Cambios en media
+        acciones_media_frame = tk.Frame(self.sin_biblioteca_frame, bd=1, relief=tk.SOLID)
+        acciones_media_frame.grid(row=3, column=0, columnspan=2, pady=5, padx=5, sticky="we")
         
-        parada_en_media_label = tk.Label(sin_biblioteca_frame, text="Parada en media:")
+        parada_en_media_label = tk.Label(self.sin_biblioteca_frame, text="Acciones si la media no mejora:")
         parada_en_media_label.grid(row=2, column=0, columnspan=1, sticky="w")
         parada_en_media_check = tk.Checkbutton(
-            parada_en_media_frame,
-            text="Activar",
-            variable=self.parada_en_media, command=self.toggle_parada_en_media
+            acciones_media_frame,
+            text="Parar la ejecución",
+            variable=self.parada_en_media, command=self.toggle_medias_entry
         )
-        parada_en_media_check.grid(row=2, column=0, sticky="w")
+        parada_en_media_check.grid(row=1, column=0, sticky="w")
         
-        self.max_medias_label = tk.Label(parada_en_media_frame, text="Número máximo medias iguales seguidas:")
-        self.max_medias_label.grid(row=2, column=1, sticky="e")
+        self.max_medias_label = tk.Label(acciones_media_frame, text="Cantidad de medias iguales seguidas:")
+        self.max_medias_label.grid(row=0, column=0)
         
-        self.max_medias_entry = tk.Entry(parada_en_media_frame, textvariable=self.max_medias_iguales)
-        self.max_medias_entry.grid(row=2, column=2, sticky="e")
+        self.max_medias_entry = tk.Entry(acciones_media_frame, textvariable=self.max_medias_iguales)
+        self.max_medias_entry.grid(row=0, column=1)
+        
+        # Cambio de mutación
+        cambio_de_mutacion_check = tk.Checkbutton(
+            acciones_media_frame,
+            text="Poner probabilidad de mutación a 0.5",
+            variable=self.cambio_de_mutacion,
+            command=self.toggle_medias_entry
+        )
+        cambio_de_mutacion_check.grid(row=2, column=0, columnspan=1, sticky="w")
 
         
         # Parada en clones
         parada_en_clones_check = tk.Checkbutton(
-            sin_biblioteca_frame,
+            self.sin_biblioteca_frame,
             text="Parar si toda la población son el mismo individuo",
             variable=self.parada_en_clones
         )
-        parada_en_clones_check.grid(row=1, column=2, columnspan=1, sticky="w")
+        parada_en_clones_check.grid(row=2, column=0, columnspan=1, sticky="w")
         
-    def toggle_parada_en_media(self):
-        if self.parada_en_media.get():
+        # Dibujar resultados parciales
+        plot_resultados_parciales_check = tk.Checkbutton(
+            self.sin_biblioteca_frame,
+            text="Mostrar mejor individuo en cada generación",
+            variable=self.plot_resultados_parciales
+        )
+        plot_resultados_parciales_check.grid(row=4, column=0, sticky="w")
+        
+    def toggle_medias_entry(self):
+        if self.parada_en_media.get() or self.cambio_de_mutacion.get():
             self.max_medias_entry.configure(state="normal")
             self.max_medias_label.configure(state="normal")
         else:
             self.max_medias_entry.configure(state="disabled")
-            self.max_medias_label.configure(state="disabled")
+            self.max_medias_label.configure(state="disabled")        
 
     def toggle_elitismo(self):
         state = "normal" if self.elitismo_var.get() else "disabled"
@@ -262,6 +276,9 @@ class GeneticAlgorithmUI(tk.Tk):
 
     def toggle_biblioteca(self):
         if self.usar_biblioteca.get():
+            
+            change_state_container(self.sin_biblioteca_frame, "disabled")
+            
             self.mutacion_dropdown["menu"].delete(2)
             # Eliminamos los crossover que no estén implementados
             self.crossover_dropdown["menu"].delete(4)
@@ -283,6 +300,9 @@ class GeneticAlgorithmUI(tk.Tk):
                 self.mutacion_tipo.set(self._enums_to_string(Mutacion.PERMUTAR_ZONA))
                 
         else:
+            
+            change_state_container(self.sin_biblioteca_frame, "normal")
+            
             if self.num_padres_pasados_activo:
                 self.num_padres_entry.configure(state="normal")
             # Insertamos la mutacion en el desplegable
@@ -353,7 +373,15 @@ class GeneticAlgorithmUI(tk.Tk):
         if self.usar_biblioteca.get():
             pass
             
-            
+def change_state_container(container, state):
+    for child in container.winfo_children():
+        change_state_container(child, state)
+        try:
+            child.configure(state=state)
+        except tk.TclError:
+            # El widget no tiene estado
+            pass
+        
 # Inicializar la interfaz
 if __name__ == "__main__":
     app = GeneticAlgorithmUI()
