@@ -1,15 +1,10 @@
-from os import system
 import os
-from signal import signal
 import threading
 import tkinter as tk
 from tkinter import filedialog
 from enums import Seleccion, Mutacion, Crossover, Elitismo
 import TSP_chapa as miTSP
 import TSP_biblioteca as deapTSP
-import subprocess
-import ctypes
-import signal
 
 class GeneticAlgorithmUI(tk.Tk):
     def __init__(self):
