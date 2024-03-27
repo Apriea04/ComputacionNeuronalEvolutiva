@@ -737,10 +737,24 @@ def crossover_pdf_optimizado(
 
             hijos.append(hijo1)
             hijos.append(hijo2)
+            
+            if verbose:
+                print(
+                    "Crossover de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                        padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
+                    )
+                )
         else:
             # Si no hay crossover, solo copia los padres a la nueva generación
             hijos.append(padre1)
             hijos.append(padre2)
+            
+            if verbose:
+                print(
+                    "Sin crossover de {padre1} y {padre2}".format(
+                        padre1=padre1, padre2=padre2
+                    )
+                )
 
     return np.array(hijos)
 
