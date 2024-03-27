@@ -371,5 +371,5 @@ def ejecucion_paralela(
     )
 
 if __name__ == "__main__":
-    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.CROSSOVER_ORDER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1)
+    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.EDGE_RECOMBINATION_CROSSOVER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1)
     
