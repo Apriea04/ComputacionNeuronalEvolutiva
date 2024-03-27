@@ -95,6 +95,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     tipo_crossover: Crossover = Crossover.CROSSOVER_ORDER,
     tipo_elitismo: Elitismo = Elitismo.PASAR_N_PADRES,
     padres_a_pasar_elitismo: int = 3,
+    verbose_en_metodos: bool = False,
 ):
     global COORDENADAS
     # ----------------------------------------------------------------------
@@ -111,7 +112,7 @@ def ejecutar_ejemplo_viajante_optimizado(
     if verbose:
         print("Municipios leídos.")
     poblacion = crear_poblacion_optimizada(
-        len(MATRIZ[0]), NUM_INDIVIDUOS, aptitud_viajante, MATRIZ, verbose, True
+        len(MATRIZ[0]), NUM_INDIVIDUOS, aptitud_viajante, MATRIZ, verbose_en_metodos, True
     )
 
     if verbose:
@@ -136,7 +137,7 @@ def ejecutar_ejemplo_viajante_optimizado(
         match tipo_seleccion:
             case Seleccion.RULETA_PESOS:
                 seleccionados = seleccionar_ruleta_pesos_optimizado(
-                    poblacion, aptitud_viajante, MATRIZ, NUM_INDIVIDUOS
+                    poblacion, aptitud_viajante, MATRIZ, NUM_INDIVIDUOS, verbose=verbose_en_metodos
                 )
             case Seleccion.TORNEO:
                 seleccionados = seleccionar_torneo_optimizado(
@@ -144,30 +145,31 @@ def ejecutar_ejemplo_viajante_optimizado(
                     PARTICIPANTES_TORNEO,
                     aptitud_viajante,
                     MATRIZ,
-                    NUM_INDIVIDUOS,  # TODO: esto depende del crossover
+                    NUM_INDIVIDUOS,
+                    verbose=verbose,
                 )
 
         match tipo_crossover:
             case Crossover.CROSSOVER_PARTIALLY_MAPPED:
                 hijos = crossover_partially_mapped_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.CROSSOVER_ORDER:
                 hijos = crossover_order_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.CROSSOVER_CYCLE:
                 hijos = crossover_cycle_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.EDGE_RECOMBINATION_CROSSOVER:
                 hijos = crossover_edge_recombination_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
 
             case Crossover.CROSSOVER_PDF:
                 hijos = crossover_pdf_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
 
         # Mutamos los hijos
@@ -175,11 +177,11 @@ def ejecutar_ejemplo_viajante_optimizado(
             if np.random.rand() < PROB_MUTACION:
                 match tipo_mutacion:
                     case Mutacion.INTERCAMBIAR_INDICES:
-                        hijo = mutar_optimizada(hijo)
+                        hijo = mutar_optimizada(hijo, verbose=verbose_en_metodos)
                     case Mutacion.PERMUTAR_ZONA:
-                        hijo = mutar_desordenado_optimizada(hijo)
+                        hijo = mutar_desordenado_optimizada(hijo, verbose=verbose_en_metodos)
                     case Mutacion.INTERCAMBIAR_GENES_VECINOS:
-                        hijo = mutar_mejorada_optimizada(hijo)
+                        hijo = mutar_mejorada_optimizada(hijo, verbose=verbose_en_metodos)
 
         # Elitismo
         if elitismo:
@@ -190,6 +192,7 @@ def ejecutar_ejemplo_viajante_optimizado(
                     NUM_INDIVIDUOS,
                     aptitud_viajante,
                     MATRIZ,
+                    verbose=verbose_en_metodos,
                 )
                 case Elitismo.PASAR_N_PADRES:
                     poblacion = elitismo_n_padres_optimizado(
@@ -199,6 +202,7 @@ def ejecutar_ejemplo_viajante_optimizado(
                         NUM_INDIVIDUOS,
                         aptitud_viajante,
                         MATRIZ,
+                        verbose=verbose_en_metodos,
                     )
         else:
             poblacion = hijos
@@ -309,7 +313,8 @@ def ejecucion_paralela(
     tipo_mutacion: Mutacion = Mutacion.PERMUTAR_ZONA,
     tipo_crossover: Crossover = Crossover.CROSSOVER_ORDER,
     tipo_elitismo: Elitismo = Elitismo.PASAR_N_PADRES,
-    padres_a_pasar_elitismo: int = 3,):
+    padres_a_pasar_elitismo: int = 3,
+    verbose_en_metodos: bool = False):
     
     coordenadas, matriz = leer_coordenadas(ruta_coordenadas)
     results = []
@@ -338,6 +343,7 @@ def ejecucion_paralela(
                     tipo_crossover,
                     tipo_elitismo,
                     padres_a_pasar_elitismo,
+                    verbose_en_metodos,
                 ),
             )
             results.append(result)
@@ -371,5 +377,5 @@ def ejecucion_paralela(
     )
 
 if __name__ == "__main__":
-    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.EDGE_RECOMBINATION_CROSSOVER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1)
+    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.EDGE_RECOMBINATION_CROSSOVER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1, verbose_en_metodos=False)
     

@@ -251,7 +251,7 @@ def crossover_partially_mapped_optimizado(
             hijos[i], hijos[i + 1] = hijo1, hijo2
             if verbose:
                 print(
-                    "Crossover de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                    "Crossover PM de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
                         padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
                     )
                 )
@@ -328,7 +328,7 @@ def crossover_order_optimizado(
             hijos[i + 1] = hijo2
             if verbose:
                 print(
-                    "Crossover de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                    "Crossover Order de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
                         padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
                     )
                 )
@@ -410,7 +410,7 @@ def crossover_cycle_optimizado(
 
         if verbose:
             print(
-                "Crossover de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                "Crossover Cycle de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
                     padre1=padre_1, padre2=padre_2, hijo1=hijo_1, hijo2=hijo_2
                 )
             )
@@ -685,7 +685,7 @@ def crossover_edge_recombination_optimizado(
 
             if verbose:
                 print(
-                    "Crossover de {padre1} y {padre2} a {hijo}".format(
+                    "Crossover Edge Recombination de {padre1} y {padre2} a {hijo}".format(
                         padre1=padre_1, padre2=padre_2, hijo=hijo
                     )
                 )
@@ -740,7 +740,7 @@ def crossover_pdf_optimizado(
             
             if verbose:
                 print(
-                    "Crossover de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                    "Crossover PDF de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
                         padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
                     )
                 )

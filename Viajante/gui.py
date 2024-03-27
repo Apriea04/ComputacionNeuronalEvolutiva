@@ -36,6 +36,7 @@ class GeneticAlgorithmUI(tk.Tk):
         )
         self.fichero_coordenadas = tk.StringVar(value="Ningún archivo seleccionado")
         self.verbose_var = tk.BooleanVar(value=True)
+        self.verbose_metodos_var = tk.BooleanVar(value=False)
 
         # Varibles de control para el algoritmo sin biblioteca
         self.dibujar_evolucion = tk.BooleanVar(value=False)
@@ -293,6 +294,12 @@ class GeneticAlgorithmUI(tk.Tk):
             variable=self.plot_resultados_parciales,
         )
         plot_resultados_parciales_check.grid(row=4, column=0, sticky="w")
+        
+        #Verbose en métodos
+        verbose_metodos_check = tk.Checkbutton(
+            self.sin_biblioteca_frame, text="Verbose para los operadores (se recomienda guardar la salida en fichero)", variable=self.verbose_metodos_var
+        )
+        verbose_metodos_check.grid(row=5, column=0, sticky="w")
 
     def toggle_medias_entry(self):
         if self.parada_en_media.get() or self.cambio_de_mutacion.get():
@@ -460,6 +467,7 @@ class GeneticAlgorithmUI(tk.Tk):
                     tipo_crossover,
                     tipo_elitismo,
                     self.num_padres_pasados.get(),
+                    verbose_en_metodos=self.verbose_metodos_var.get(),
                 )
 
         except tk.TclError as e:
