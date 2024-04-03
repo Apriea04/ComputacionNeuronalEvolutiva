@@ -1,6 +1,7 @@
 import random
 from typing import Callable, List
 import matplotlib.pyplot as plt
+from Datos.datos import leer_coordenadas
 
 # Todo este código está pensado desde el principio para minimizar la función de aptitud
 
@@ -108,7 +109,7 @@ def mutar(individuo: list) -> list:
 
 
 def crossover_partially_mapped(
-    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+    lista_padres: list, probabilidad: float
 ) -> list:
     """Realiza el crossover partially mapped según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
@@ -151,7 +152,7 @@ def crossover_partially_mapped(
 
     return hijos
 
-def crossover_pdf(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float) -> list:
+def crossover_pdf(lista_padres: list, probabilidad: float) -> list:
     """Realiza el crossover según se explica en el PDF proporcionado por el profesor."""
     hijos = []
     num_padres = len(lista_padres)
@@ -190,7 +191,7 @@ def crossover_pdf(lista_padres: list, aptitud: Callable, matriz_adyacencia: list
         
     return hijos
 
-def crossover_order(lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float) -> list:
+def crossover_order(lista_padres: list, probabilidad: float) -> list:
     """Realiza el order crossover."""
     hijos = []
 
@@ -232,7 +233,7 @@ def crossover_order(lista_padres: list, aptitud: Callable, matriz_adyacencia: li
 
 
 def crossover_cycle(
-    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+    lista_padres: list, probabilidad: float
 ) -> list:
     """Realiza el order crossover según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
@@ -280,17 +281,9 @@ def crossover_cycle(
             if hijo_2[j] == -1:
                 hijo_2[j] = padre_1[j]
 
-        # Comprobamos que los hijos resultantes sean válidos y los añadimos a la lista de hijos
-        # Si no son válidos, añadimos los padres a la lista de hijos
-        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_1)
-        else:
-            lista_hijos.append(hijo_1)
-
-        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos.append(padre_2)
-        else:
-            lista_hijos.append(hijo_2)
+        # Los añadimos a la lista de hijos
+        lista_hijos.append(hijo_1)
+        lista_hijos.append(hijo_2)
 
     return lista_hijos
 
@@ -404,7 +397,7 @@ def seleccionar_ruleta_pesos(
 
 
 def crossover_edge_recombination(
-    lista_padres: list, aptitud: Callable, matriz_adyacencia: list, probabilidad: float
+    lista_padres: list, probabilidad: float
 ) -> list:
     """Realiza el edge recombination crossover según se explica en la página de Wikipedia y Rubicite mencionadas."""
 
@@ -499,7 +492,7 @@ def ejecutar_ejemplo_viajante(
 
         # Cruzamos los seleccionados
         hijos = crossover_pdf(
-            seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+            seleccionados, PROB_CRUZAMIENTO
         )
 
         # Mutamos los hijos
@@ -567,8 +560,8 @@ PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 100
-RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
-MATRIZ = leer_distancias(RUTA_MATRIZ)
+RUTA_COORDENADAS = "Datos/50_coordenadas.txt"
+_, MATRIZ = leer_coordenadas(RUTA_COORDENADAS)
 # ----------------------------------------------------------------------
 
 if  __name__ == "__main__":

@@ -100,5 +100,5 @@ def leer_coordenadas(path: str, metrica="euclidea"):
 
 
 if __name__ == "__main__":
-    crear_lista_coordenadas(20, "Viajante/Datos/20_coordenadas.txt", -200, 200)
-    coordenadas_a_distancias("Viajante/Datos/20_coordenadas.txt", "Viajante/Datos/20_distancias.txt")
+    crear_lista_coordenadas(12, "Datos/12_coordenadas.txt", -200, 200)
+    coordenadas_a_distancias("Datos/12_coordenadas.txt", "Datos/12_distancias.txt")

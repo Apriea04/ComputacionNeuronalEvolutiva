@@ -20,8 +20,9 @@ from Viajante_tradicional_optimizado import (
 from Datos.datos import leer_coordenadas
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
-RUTA_COORDENADAS = "Viajante/Datos/50_coordenadas.txt"
+RUTA_COORDENADAS = "Datos/50_coordenadas.txt"
 
 
 def dibujar_individuo(
@@ -146,30 +147,30 @@ def ejecutar_ejemplo_viajante_optimizado(
                     aptitud_viajante,
                     MATRIZ,
                     NUM_INDIVIDUOS,
-                    verbose=verbose,
+                    verbose=verbose_en_metodos,
                 )
 
         match tipo_crossover:
             case Crossover.CROSSOVER_PARTIALLY_MAPPED:
                 hijos = crossover_partially_mapped_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
+                    seleccionados, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.CROSSOVER_ORDER:
                 hijos = crossover_order_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
+                    seleccionados, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.CROSSOVER_CYCLE:
                 hijos = crossover_cycle_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
+                    seleccionados, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
             case Crossover.EDGE_RECOMBINATION_CROSSOVER:
                 hijos = crossover_edge_recombination_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
+                    seleccionados, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
 
             case Crossover.CROSSOVER_PDF:
                 hijos = crossover_pdf_optimizado(
-                    seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
+                    seleccionados, PROB_CRUZAMIENTO, verbose=verbose_en_metodos
                 )
 
         # Mutamos los hijos
@@ -377,5 +378,5 @@ def ejecucion_paralela(
     )
 
 if __name__ == "__main__":
-    ejecucion_paralela(procesos=10, ruta_coordenadas="Viajante/Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=True, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=10000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=2, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.EDGE_RECOMBINATION_CROSSOVER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=1, verbose_en_metodos=False)
+    ejecucion_paralela(procesos=10, ruta_coordenadas="Datos/50_coordenadas.txt", dibujar_evolucion=False, verbose=True, parada_en_media=False, max_medias_iguales=10, elitismo=True, parada_en_clones=False, plot_resultados_parciales=False, cambio_de_mutacion=False, iteraciones=1000, prob_mutacion=0.13, prob_cruzamiento=0.35, participantes_torneo=3, num_individuos=100, tipo_seleccion=Seleccion.TORNEO, tipo_mutacion=Mutacion.PERMUTAR_ZONA, tipo_crossover=Crossover.CROSSOVER_ORDER, tipo_elitismo=Elitismo.PASAR_N_PADRES, padres_a_pasar_elitismo=3, verbose_en_metodos=False)
     

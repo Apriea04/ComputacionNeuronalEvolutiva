@@ -13,7 +13,7 @@ class GeneticAlgorithmUI(tk.Tk):
 
         # Variables de control
         self.num_ejecuciones = tk.IntVar(value=2)
-        self.num_iteraciones = tk.IntVar(value=1000)
+        self.num_iteraciones = tk.IntVar(value=10000)
         self.prob_mutacion = tk.DoubleVar(value=0.13)
         self.prob_crossover = tk.DoubleVar(value=0.35)
         self.num_individuos = tk.IntVar(value=100)
@@ -99,7 +99,7 @@ class GeneticAlgorithmUI(tk.Tk):
         crossover_entry.grid(row=4, column=1, sticky="we")
 
         # Numero de individuos
-        individuos_label = tk.Label(main_frame, text="Número de individuos:")
+        individuos_label = tk.Label(main_frame, text="Número de individuos (par):")
         individuos_label.grid(row=5, column=0, sticky="w")
         individuos_entry = tk.Entry(main_frame, textvariable=self.num_individuos)
         individuos_entry.grid(row=5, column=1, sticky="we")

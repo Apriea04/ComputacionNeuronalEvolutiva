@@ -2,6 +2,7 @@ import random
 from typing import Callable
 import matplotlib.pyplot as plt
 import numpy as np
+from Datos.datos import leer_coordenadas
 
 # TODO: añadir verbose a todo
 
@@ -158,7 +159,7 @@ def mutar_desordenado_optimizada(
 
     # Desordenamos la zona
     np.random.shuffle(mutado[inicio:fin])
-
+    
     if verbose:
         print(
             "Mutación de {individuo} a {mutado}".format(
@@ -204,8 +205,6 @@ def mutar_optimizada(
 
 def crossover_partially_mapped_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
     verbose: bool = False,
 ) -> np.ndarray:
@@ -270,8 +269,6 @@ def crossover_partially_mapped_optimizado(
 
 def crossover_order_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
     verbose: bool = False,
 ) -> np.ndarray:
@@ -348,8 +345,6 @@ def crossover_order_optimizado(
 
 def crossover_cycle_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
     verbose: bool = False,
 ) -> np.ndarray:
@@ -396,17 +391,9 @@ def crossover_cycle_optimizado(
         hijo_1[hijo_1 == -1] = padre_2[~np.isin(padre_2, hijo_1)]
         hijo_2[hijo_2 == -1] = padre_1[~np.isin(padre_1, hijo_2)]
 
-        # Comprobamos que los hijos resultantes sean válidos y los añadimos al array de hijos
-        # Si no son válidos, añadimos los padres al array de hijos
-        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos[i] = padre_1
-        else:
-            lista_hijos[i] = hijo_1
-
-        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos[i + 1] = padre_2
-        else:
-            lista_hijos[i + 1] = hijo_2
+        # Añadimos al array de hijos los hijos obtenidos
+        lista_hijos[i] = hijo_1
+        lista_hijos[i + 1] = hijo_2
 
         if verbose:
             print(
@@ -603,8 +590,6 @@ def seleccionar_ruleta_pesos_optimizado(
 
 def crossover_edge_recombination_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
     verbose: bool = False,
 ) -> np.ndarray:
@@ -695,8 +680,6 @@ def crossover_edge_recombination_optimizado(
 
 def crossover_pdf_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
     verbose: bool = False,
 ) -> np.ndarray:
@@ -797,7 +780,7 @@ def ejecutar_ejemplo_viajante_optimizado(
 
         # Cruzamos los seleccionados
         hijos = crossover_pdf_optimizado(
-            seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+            seleccionados, PROB_CRUZAMIENTO
         )
 
         # Mutamos los hijos
@@ -883,8 +866,8 @@ PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 20
-RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
-MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
+RUTA_MATRIZ = "Datos/50_coordenadas.txt"
+_,MATRIZ = leer_coordenadas(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
