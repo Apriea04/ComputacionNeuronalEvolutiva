@@ -2,6 +2,7 @@ import random
 from typing import Callable
 import matplotlib.pyplot as plt
 import numpy as np
+from Datos.datos import leer_coordenadas
 
 # TODO: añadir verbose a todo
 
@@ -10,7 +11,9 @@ import numpy as np
 # Código generado por IA
 
 
-def leer_distancias_optimizada(path_distancias: str) -> np.ndarray:
+def leer_distancias_optimizada(
+    path_distancias: str, verbose: bool = False
+) -> np.ndarray:
     """
     Lee una matriz de distancias de un fichero de texto utilizando NumPy para optimizar el proceso.
     Si se proporciona un path_nombres, lee los nombres desde ese archivo; de lo contrario, asume que
@@ -40,6 +43,9 @@ def leer_distancias_optimizada(path_distancias: str) -> np.ndarray:
 
     distancias_io = StringIO("\n".join(distancias_str))
     distancias = np.loadtxt(distancias_io)
+
+    if verbose:
+        print("Distancias: ", distancias)
 
     return distancias
 
@@ -111,7 +117,9 @@ def crear_poblacion_optimizada(
     return poblacion
 
 
-def mutar_mejorada_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
+def mutar_mejorada_optimizada(
+    individuo: np.ndarray, max_genes: int = 2, verbose: bool = False
+) -> np.ndarray:
     """Muta un individuo utilizando NumPy para optimizar la mutación.
     Puede que el camino resultante no sea válido."""
 
@@ -124,10 +132,19 @@ def mutar_mejorada_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.n
     # Intercambiamos los valores en posiciones consecutivas
     mutado[inicio], mutado[inicio + 1] = mutado[inicio + 1], mutado[inicio]
 
+    if verbose:
+        print(
+            "Mutación de {individuo} a {mutado}".format(
+                individuo=individuo, mutado=mutado
+            )
+        )
+
     return mutado
 
 
-def mutar_desordenado_optimizada(individuo: np.ndarray) -> np.ndarray:
+def mutar_desordenado_optimizada(
+    individuo: np.ndarray, verbose: bool = False
+) -> np.ndarray:
     """
     Shuffle a una zona del individuo
     Muta un individuo utilizando NumPy para optimizar la mutación.
@@ -142,11 +159,20 @@ def mutar_desordenado_optimizada(individuo: np.ndarray) -> np.ndarray:
 
     # Desordenamos la zona
     np.random.shuffle(mutado[inicio:fin])
+    
+    if verbose:
+        print(
+            "Mutación de {individuo} a {mutado}".format(
+                individuo=individuo, mutado=mutado
+            )
+        )
 
     return mutado
 
 
-def mutar_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
+def mutar_optimizada(
+    individuo: np.ndarray, max_genes: int = 2, verbose: bool = False
+) -> np.ndarray:
     """
     Intercambiar índices de un individuo de manera aleatoria.
     Muta un individuo utilizando NumPy para optimizar la mutación.
@@ -167,14 +193,20 @@ def mutar_optimizada(individuo: np.ndarray, max_genes: int = 2) -> np.ndarray:
             np.setdiff1d(mutado, mutado[posiciones[i]])
         )
 
+    if verbose:
+        print(
+            "Mutación de {individuo} a {mutado}".format(
+                individuo=individuo, mutado=mutado
+            )
+        )
+
     return mutado
 
 
 def crossover_partially_mapped_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
+    verbose: bool = False,
 ) -> np.ndarray:
     """Realiza el crossover partially mapped según se explica en https://www.hindawi.com/journals/cin/2017/7430125/
     Resumidamente, se van eligiendo padres en orden y de 2 en 2.
@@ -216,18 +248,29 @@ def crossover_partially_mapped_optimizado(
                             hijo[k] = mapeo[hijo[k]]
 
             hijos[i], hijos[i + 1] = hijo1, hijo2
+            if verbose:
+                print(
+                    "Crossover PM de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                        padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
+                    )
+                )
         else:
             # Si no hay crossover, se agregan los padres originales
             hijos[i], hijos[i + 1] = padre1, padre2
+            if verbose:
+                print(
+                    "Sin crossover de {padre1} y {padre2}".format(
+                        padre1=padre1, padre2=padre2
+                    )
+                )
 
     return hijos
 
 
 def crossover_order_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Realiza el order crossover optimizado utilizando NumPy para mejorar la eficiencia.
@@ -280,19 +323,30 @@ def crossover_order_optimizado(
 
             hijos[i] = hijo1
             hijos[i + 1] = hijo2
+            if verbose:
+                print(
+                    "Crossover Order de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                        padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
+                    )
+                )
         else:
             # Si no hay crossover, solo copia los padres a la nueva generación
             hijos[i] = padre1
             hijos[i + 1] = padre2
+            if verbose:
+                print(
+                    "Sin crossover de {padre1} y {padre2}".format(
+                        padre1=padre1, padre2=padre2
+                    )
+                )
 
     return hijos
 
 
 def crossover_cycle_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Realiza el order crossover optimizado utilizando NumPy para mejorar la eficiencia.
@@ -337,17 +391,16 @@ def crossover_cycle_optimizado(
         hijo_1[hijo_1 == -1] = padre_2[~np.isin(padre_2, hijo_1)]
         hijo_2[hijo_2 == -1] = padre_1[~np.isin(padre_1, hijo_2)]
 
-        # Comprobamos que los hijos resultantes sean válidos y los añadimos al array de hijos
-        # Si no son válidos, añadimos los padres al array de hijos
-        if aptitud(hijo_1, matriz_adyacencia) == float("inf"):
-            lista_hijos[i] = padre_1
-        else:
-            lista_hijos[i] = hijo_1
+        # Añadimos al array de hijos los hijos obtenidos
+        lista_hijos[i] = hijo_1
+        lista_hijos[i + 1] = hijo_2
 
-        if aptitud(hijo_2, matriz_adyacencia) == float("inf"):
-            lista_hijos[i + 1] = padre_2
-        else:
-            lista_hijos[i + 1] = hijo_2
+        if verbose:
+            print(
+                "Crossover Cycle de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                    padre1=padre_1, padre2=padre_2, hijo1=hijo_1, hijo2=hijo_2
+                )
+            )
 
     return lista_hijos
 
@@ -359,6 +412,7 @@ def elitismo_n_padres_optimizado(
     num_elitismo: int,
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
+    verbose: bool = False,
 ) -> np.ndarray:
     """De entre padres e hijos selecciona los num_padres mejores padres y los num_elitismo-num_padres mejores hijos."""
 
@@ -367,6 +421,12 @@ def elitismo_n_padres_optimizado(
 
     padres_elite = padres[indices_padres][:num_padres]
     hijos_elite = hijos[indices_hijos][: num_elitismo - num_padres]
+    if verbose:
+        print(
+            "Elitismo: los {num_padres} mejores padres son {padres_elite}".format(
+                num_padres=num_padres, padres_elite=padres_elite
+            )
+        )
     return np.concatenate((padres_elite, hijos_elite))
 
 
@@ -375,6 +435,7 @@ def elitismo_optimizado(
     num_elitismo: int,
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Selecciona los mejores individuos de la población utilizando NumPy para mejorar la eficiencia.
@@ -391,6 +452,26 @@ def elitismo_optimizado(
     )
 
     # Devolvemos los num_elitismo primeros individuos utilizando la indexación avanzada de NumPy
+    if verbose:
+        print(
+            "Elitismo: El mejor individuo tiene aptitud {aptitud}".format(
+                aptitud=aptitud(poblacion[indices_ordenados[0]], matriz_adyacencia)
+            )
+        )
+        print(
+            "Elitismo: El último individuo de la élite tiene aptitud {aptitud}".format(
+                aptitud=aptitud(
+                    poblacion[indices_ordenados[num_elitismo - 1]], matriz_adyacencia
+                )
+            )
+        )
+        print(
+            "Elitismo: El primer individuo que se quedó fuera tiene aptitud {aptitud}".format(
+                aptitud=aptitud(
+                    poblacion[indices_ordenados[num_elitismo]], matriz_adyacencia
+                )
+            )
+        )
     return poblacion[indices_ordenados[:num_elitismo]]
 
 
@@ -400,6 +481,7 @@ def seleccionar_torneo_optimizado(
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
     cantidad: int = None,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Selecciona los mejores individuos de la población utilizando un enfoque de torneo y NumPy para mejorar la eficiencia.
@@ -441,6 +523,15 @@ def seleccionar_torneo_optimizado(
         # Añadimos el seleccionado a la lista de seleccionados
         seleccionados = np.vstack((seleccionados, seleccionado))
 
+        if verbose:
+            print(
+                "Torneo: Seleccionado {seleccionado} con aptitud {aptitud} entre las aptitudes {aptitudes}".format(
+                    seleccionado=seleccionado,
+                    aptitud=aptitudes[indice_seleccionado],
+                    aptitudes=aptitudes,
+                )
+            )
+
     return seleccionados
 
 
@@ -449,6 +540,7 @@ def seleccionar_ruleta_pesos_optimizado(
     aptitud: Callable,
     matriz_adyacencia: np.ndarray,
     cantidad: int = None,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Selecciona individuos de la población dándole más probabilidad a aquellos con menor aptitud.
@@ -486,14 +578,20 @@ def seleccionar_ruleta_pesos_optimizado(
     # Seleccionamos los individuos a partir de los índices encontrados
     seleccionados = poblacion[indices_seleccionados]
 
+    if verbose:
+        print(
+            "Ruleta: Las probabilidades acumuladas de los que fueron seleccionados son {probabilidades}".format(
+                probabilidades=probabilidades_acumuladas[indices_seleccionados]
+            )
+        )
+
     return seleccionados
 
 
 def crossover_edge_recombination_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
+    verbose: bool = False,
 ) -> np.ndarray:
     """
     Realiza el edge recombination crossover optimizado utilizando NumPy para mejorar la eficiencia.
@@ -516,62 +614,74 @@ def crossover_edge_recombination_optimizado(
 
         padre_1 = lista_padres[i]
         padre_2 = lista_padres[i + 1]
+        
+        for k in range(2):  # Para obtener 2 hijos
+            
+            if k == 1:
+                padre_1, padre_2 = padre_2, padre_1
 
-        # Creamos el diccionario de vecinos
-        vecinos = {}
-        for padre in [padre_1, padre_2]:
-            for j in range(len(padre)):
-                if padre[j] not in vecinos:
-                    vecinos[padre[j]] = set()
-                if j > 0:
-                    vecinos[padre[j]].add(padre[j - 1])
-                if j < len(padre) - 1:
-                    vecinos[padre[j]].add(padre[j + 1])
+            # Creamos el diccionario de vecinos
+            vecinos = {}
+            for padre in [padre_1, padre_2]:
+                for j in range(len(padre)):
+                    if padre[j] not in vecinos:
+                        vecinos[padre[j]] = set()
+                    if j > 0:
+                        vecinos[padre[j]].add(padre[j - 1])
+                    if j < len(padre) - 1:
+                        vecinos[padre[j]].add(padre[j + 1])
 
-        # Inicializamos el hijo con el primer valor de uno de los padres
-        hijo = np.random.choice([padre_1[0], padre_2[0]], 1)
+        
+            # Inicializamos el hijo con el primer valor de uno de los padres
+            hijo = np.random.choice([padre_1[0], padre_2[0]], 1)
 
-        # Y eliminamos ese valor como vecino de todos los nodos
-        for vecino in list(vecinos.keys()):
-            if hijo[0] in vecinos[vecino]:
-                vecinos[vecino].remove(hijo[0])
-
-        # Mientras no hayamos completado el hijo
-        while len(hijo) < len(padre_1):
-            actual = hijo[-1]
-
-            if vecinos[actual]:
-                # Seleccionamos el vecino con menos vecinos adicionales
-                al_min = list(vecinos[actual])
-                x = min(
-                    al_min, key=lambda k: len(vecinos[k])
-                )  # min de una lista con un solo elemento falla, ya que k no es clave del diccionario al haber sido borrado por ser vacío en la iteración anterior
-            else:
-                # Escogemos un elemento no incluido en el hijo al azar
-                x = np.random.choice(
-                    [elem for elem in vecinos.keys() if elem not in hijo]
-                )
-            hijo = np.append(hijo, x)
-
-            # Eliminamos el elemento de las clases de vecinos
-            del vecinos[actual]
-
-            # Eliminamos el elemento actual de las listas de vecinos
+            # Y eliminamos ese valor como vecino de todos los nodos
             for vecino in list(vecinos.keys()):
-                if x in vecinos[vecino]:
-                    vecinos[vecino].remove(x)
-                # Si la lista de vecinos está vacía, eliminamos el vecino del diccionario
+                if hijo[0] in vecinos[vecino]:
+                    vecinos[vecino].remove(hijo[0])
 
-        lista_hijos.append(hijo)
+            # Mientras no hayamos completado el hijo
+            while len(hijo) < len(padre_1):
+                actual = hijo[-1]
+
+                if vecinos[actual]:
+                    # Seleccionamos el vecino con menos vecinos adicionales
+                    al_min = list(vecinos[actual])
+                    x = min(
+                        al_min, key=lambda k: len(vecinos[k])
+                    )  # min de una lista con un solo elemento falla, ya que k no es clave del diccionario al haber sido borrado por ser vacío en la iteración anterior
+                else:
+                    # Escogemos un elemento no incluido en el hijo al azar
+                    x = np.random.choice(
+                        [elem for elem in vecinos.keys() if elem not in hijo]
+                    )
+                hijo = np.append(hijo, x)
+
+                # Eliminamos el elemento de las clases de vecinos
+                del vecinos[actual]
+
+                # Eliminamos el elemento actual de las listas de vecinos
+                for vecino in list(vecinos.keys()):
+                    if x in vecinos[vecino]:
+                        vecinos[vecino].remove(x)
+                    # Si la lista de vecinos está vacía, eliminamos el vecino del diccionario
+
+            lista_hijos.append(hijo)
+
+            if verbose:
+                print(
+                    "Crossover Edge Recombination de {padre1} y {padre2} a {hijo}".format(
+                        padre1=padre_1, padre2=padre_2, hijo=hijo
+                    )
+                )
 
     return np.array(lista_hijos)
 
 
 def crossover_pdf_optimizado(
     lista_padres: np.ndarray,
-    aptitud: Callable,
-    matriz_adyacencia: np.ndarray,
     probabilidad: float,
+    verbose: bool = False,
 ) -> np.ndarray:
     """Realiza el crossover según se explica en el PDF proporcionado por el profesor."""
     hijos = []
@@ -610,10 +720,24 @@ def crossover_pdf_optimizado(
 
             hijos.append(hijo1)
             hijos.append(hijo2)
+            
+            if verbose:
+                print(
+                    "Crossover PDF de {padre1} y {padre2} a {hijo1} y {hijo2}".format(
+                        padre1=padre1, padre2=padre2, hijo1=hijo1, hijo2=hijo2
+                    )
+                )
         else:
             # Si no hay crossover, solo copia los padres a la nueva generación
             hijos.append(padre1)
             hijos.append(padre2)
+            
+            if verbose:
+                print(
+                    "Sin crossover de {padre1} y {padre2}".format(
+                        padre1=padre1, padre2=padre2
+                    )
+                )
 
     return np.array(hijos)
 
@@ -656,7 +780,7 @@ def ejecutar_ejemplo_viajante_optimizado(
 
         # Cruzamos los seleccionados
         hijos = crossover_pdf_optimizado(
-            seleccionados, aptitud_viajante, MATRIZ, PROB_CRUZAMIENTO
+            seleccionados, PROB_CRUZAMIENTO
         )
 
         # Mutamos los hijos
@@ -742,8 +866,8 @@ PROB_MUTACION = 0.1
 PROB_CRUZAMIENTO = 0.8
 PARTICIPANTES_TORNEO = 2
 NUM_INDIVIDUOS = 20
-RUTA_MATRIZ = "Viajante/Datos/50_distancias.txt"
-MATRIZ = leer_distancias_optimizada(RUTA_MATRIZ)
+RUTA_MATRIZ = "Datos/50_coordenadas.txt"
+_,MATRIZ = leer_coordenadas(RUTA_MATRIZ)
 # ----------------------------------------------------------------------
 
 if __name__ == "__main__":

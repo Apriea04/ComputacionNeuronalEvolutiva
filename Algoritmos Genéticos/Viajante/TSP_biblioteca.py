@@ -107,4 +107,4 @@ def ejecucion_paralela(procesos, ruta_coordenadas: str, verbose: bool, iteracion
     dibujar_individuo(best_solution, coordenadas, distancia="euclidea", sleep_time=6000)
 
 if __name__ == "__main__":
-    ejecucion_paralela(3, "Viajante/Datos/50_coordenadas.txt", True, 1000, 0.13, 0.35, 2, 100, Seleccion.TORNEO, Mutacion.PERMUTAR_ZONA, Crossover.CROSSOVER_ORDER, Elitismo.PASAR_N_PADRES, 3)
+    ejecucion_paralela(10, "Datos/50_coordenadas.txt", True, 1000, 0.13, 0.35, 3, 100, Seleccion.TORNEO, Mutacion.PERMUTAR_ZONA, Crossover.CROSSOVER_ORDER, Elitismo.PASAR_N_PADRES, 3)

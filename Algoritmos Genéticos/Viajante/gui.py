@@ -13,7 +13,7 @@ class GeneticAlgorithmUI(tk.Tk):
 
         # Variables de control
         self.num_ejecuciones = tk.IntVar(value=2)
-        self.num_iteraciones = tk.IntVar(value=1000)
+        self.num_iteraciones = tk.IntVar(value=10000)
         self.prob_mutacion = tk.DoubleVar(value=0.13)
         self.prob_crossover = tk.DoubleVar(value=0.35)
         self.num_individuos = tk.IntVar(value=100)
@@ -36,6 +36,7 @@ class GeneticAlgorithmUI(tk.Tk):
         )
         self.fichero_coordenadas = tk.StringVar(value="Ningún archivo seleccionado")
         self.verbose_var = tk.BooleanVar(value=True)
+        self.verbose_metodos_var = tk.BooleanVar(value=False)
 
         # Varibles de control para el algoritmo sin biblioteca
         self.dibujar_evolucion = tk.BooleanVar(value=False)
@@ -98,7 +99,7 @@ class GeneticAlgorithmUI(tk.Tk):
         crossover_entry.grid(row=4, column=1, sticky="we")
 
         # Numero de individuos
-        individuos_label = tk.Label(main_frame, text="Número de individuos:")
+        individuos_label = tk.Label(main_frame, text="Número de individuos (par):")
         individuos_label.grid(row=5, column=0, sticky="w")
         individuos_entry = tk.Entry(main_frame, textvariable=self.num_individuos)
         individuos_entry.grid(row=5, column=1, sticky="we")
@@ -293,6 +294,12 @@ class GeneticAlgorithmUI(tk.Tk):
             variable=self.plot_resultados_parciales,
         )
         plot_resultados_parciales_check.grid(row=4, column=0, sticky="w")
+        
+        #Verbose en métodos
+        verbose_metodos_check = tk.Checkbutton(
+            self.sin_biblioteca_frame, text="Verbose para los operadores (se recomienda guardar la salida en fichero)", variable=self.verbose_metodos_var
+        )
+        verbose_metodos_check.grid(row=5, column=0, sticky="w")
 
     def toggle_medias_entry(self):
         if self.parada_en_media.get() or self.cambio_de_mutacion.get():
@@ -460,6 +467,7 @@ class GeneticAlgorithmUI(tk.Tk):
                     tipo_crossover,
                     tipo_elitismo,
                     self.num_padres_pasados.get(),
+                    verbose_en_metodos=self.verbose_metodos_var.get(),
                 )
 
         except tk.TclError as e:
