@@ -24,6 +24,8 @@ a = np.matmul(BTB_1BT, y)
 # Representamos la función:
 x_fun = np.linspace(-1, 3, 10000)
 y_fun = a[0] + a[1] * x_fun + a[2] * x_fun**2
+plt.plot(x, y, "ro")
+plt.grid()
 plt.plot(x_fun, y_fun)
 plt.show()
 
@@ -36,7 +38,14 @@ error_cuadratico_medio = suma_errores / len(x)
 print("Error cuadrático medio: ", error_cuadratico_medio)
 
 # Ahora dibujamos la función, los puntos y los errores
-
+# Dibujamos las líneas verticales que representan los errores
+plt.grid()
+plt.plot(x_fun, y_fun, label="Función ajustada")  # La curva ajustada
+plt.plot(x, y, "ro", label="Puntos originales")   # Los puntos originales
+for i, punto in enumerate(puntos):
+    plt.plot([x[i], x[i]], [y[i], y_hat[i]], "g--")  # Línea de error
+    error = np.round(errores[i], 4)  # Redondeamos el error para mostrarlo
+    plt.text(x[i], (y[i] + y_hat[i]) / 2, f'Error: {error}', ha='right')  # Etiqueta del error
 plt.show()
 
 
