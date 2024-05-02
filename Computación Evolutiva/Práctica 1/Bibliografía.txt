@@ -1,0 +1,4 @@
+https://machinelearningmastery.com/implement-backpropagation-algorithm-scratch-python/
+https://bibliotecadigital.univalle.edu.co/bitstream/handle/10893/10330/Una-aproximacion-practica-a-las-redes.pdf?sequence=6
+https://link.springer.com/content/pdf/10.1007/978-3-319-78145-7.pdf
+https://github.com/scikit-learn/scikit-learn/blob/4e20b01b244950a4b9e229bd55f0045b9d7123eb/sklearn/neural_network/_multilayer_perceptron.py#L1261
